@@ -1,5 +1,9 @@
 package org.berk.distributedcounter;
 
+import org.berk.distributedcounter.rest.api.EventCount;
+
+import java.util.List;
+
 public interface Counter {
 
     /**
@@ -14,7 +18,11 @@ public interface Counter {
      */
     Long increment(String eventId, int amount);
 
+    Long remove(String eventId);
 
     Long getCount(String eventId);
 
+    long getSize();
+
+    List<EventCount> getCounts();
 }

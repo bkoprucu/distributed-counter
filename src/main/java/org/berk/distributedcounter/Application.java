@@ -8,7 +8,6 @@ import org.berk.distributedcounter.rest.CounterResource;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -22,7 +21,7 @@ public class Application {
     public static void main(String[] args) {
 
         HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                HazelcastConfig.getConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
+                HazelcastConfig.newConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
 
         ResourceConfig config = new ResourceConfig(CounterResource.class, JacksonFeature.class);
 

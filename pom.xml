@@ -16,6 +16,7 @@
 
         <jetty-server.version>9.4.7.v20170914</jetty-server.version>
         <jersey.version>2.26</jersey.version>
+        <hazelcast.version>3.9</hazelcast.version>
     </properties>
 
     <dependencies>
@@ -71,7 +72,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>3.9</version>
+            <version>${hazelcast.version}</version>
         </dependency>
 
         <dependency>

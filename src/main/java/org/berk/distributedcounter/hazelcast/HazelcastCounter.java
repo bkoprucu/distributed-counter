@@ -4,12 +4,18 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.AbstractEntryProcessor;
 import org.berk.distributedcounter.Counter;
-import org.glassfish.hk2.api.Factory;
+import org.berk.distributedcounter.rest.api.EventCount;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class HazelcastCounter implements Counter {
+
+    private static final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
 
     private final IMap<String, Long> distributedMap;
 
@@ -44,6 +50,31 @@ public class HazelcastCounter implements Counter {
     @Override
     public Long getCount(String eventId) {
         return distributedMap.get(eventId);
+    }
+
+    @Override
+    public long getSize() {
+        return distributedMap.size();
+    }
+
+    @Override
+    public List<EventCount> getCounts() {
+        return distributedMap
+                .entrySet()
+                .stream()
+                .map(entry -> new EventCount(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Long remove(String eventId) {
+        Long removed = distributedMap.remove(eventId);
+        log.info("Removed entry {} with value {}", eventId, removed);
+        return removed;
+    }
+
+    void reset() {
+        distributedMap.clear();
     }
 
 }
