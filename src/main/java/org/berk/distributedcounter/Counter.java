@@ -1,4 +1,4 @@
-package org.berk.distributedcounter.counter;
+package org.berk.distributedcounter;
 
 public interface Counter {
 

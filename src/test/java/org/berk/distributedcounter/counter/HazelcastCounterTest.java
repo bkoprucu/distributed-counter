@@ -1,7 +1,13 @@
 package org.berk.distributedcounter.counter;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import org.berk.distributedcounter.Counter;
+import org.berk.distributedcounter.hazelcast.HazelcastConfig;
+import org.berk.distributedcounter.hazelcast.HazelcastCounter;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.LongStream;
 
@@ -10,8 +16,10 @@ import static org.junit.Assert.assertNull;
 
 public class HazelcastCounterTest {
 
+    final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+            HazelcastConfig.getConfig("DistributedCounter_Test", 9300, Collections.singletonList("localhost")));
 
-    private final Counter counter = null; // TODO implement
+    private final Counter counter = new HazelcastCounter(hazelcastInstance);
 
 
     @Test
