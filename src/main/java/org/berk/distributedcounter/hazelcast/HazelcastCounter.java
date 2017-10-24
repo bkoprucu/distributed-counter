@@ -3,6 +3,7 @@ package org.berk.distributedcounter.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryProcessor;
 import org.berk.distributedcounter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.slf4j.Logger;
@@ -21,6 +22,16 @@ public class HazelcastCounter implements Counter {
 
     public static final String DEFAULT_DISTRIBUTED_MAP_NAME = HazelcastCounter.class.getSimpleName().concat("Map");
 
+    // Re-usable EntryProcessor for incrementing by one
+    private final EntryProcessor<String, Long> singleIncrementProcessor = new AbstractEntryProcessor<String, Long>() {
+        @Override
+        public Object process(Map.Entry<String, Long> entry) {
+            return entry.setValue(entry.getValue() == null ? 1L
+                                                           : entry.getValue() + 1L);
+        }
+    };
+
+
     @Inject
     public HazelcastCounter(HazelcastInstance hazelcastInstance) {
         this.distributedMap = hazelcastInstance.getMap(DEFAULT_DISTRIBUTED_MAP_NAME);
@@ -29,7 +40,7 @@ public class HazelcastCounter implements Counter {
 
     @Override
     public Long increment(String eventId) {
-        return increment(eventId, 1);
+        return (Long) distributedMap.executeOnKey(eventId, singleIncrementProcessor);
     }
 
     @Override
