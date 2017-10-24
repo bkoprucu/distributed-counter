@@ -35,9 +35,10 @@ public class CounterResource {
     @PUT
     @Path("/count/{eventId}")
     public Response increment(@PathParam("eventId") String eventId,
-                              @QueryParam("amount") Integer amount) {
-        Long previous = amount == null ? counter.increment(eventId)
-                                       : counter.increment(eventId, amount);
+                              @QueryParam("amount") Integer amount,
+                              @QueryParam("requestId") String requestId) {
+        Long previous = amount == null ? counter.increment(eventId, requestId)
+                                       : counter.increment(eventId, amount, requestId);
         return Response.status(previous == null ? CREATED
                                                 : OK)
                        .entity(previous).build();
@@ -52,8 +53,10 @@ public class CounterResource {
 
     @DELETE
     @Path("/count/{eventId}")
-    public Long deleteCount(@PathParam("eventId") String eventId) {
-        return counter.remove(eventId);
+    public Response deleteCount(@PathParam("eventId") String eventId,
+                                @QueryParam("requestId") String requestId) {
+        counter.remove(eventId, requestId);
+        return Response.ok().build();
     }
 
     @GET

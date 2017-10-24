@@ -23,6 +23,7 @@ import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -55,7 +56,7 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void shouldIncrementByOne() {
         String eventId = "abc";
-        doReturn(5L).when(counter).increment(eventId);
+        doReturn(5L).when(counter).increment(eq(eventId), any());
         try (Response response = target("counter/count")
                 .path(eventId)
                 .request(APPLICATION_JSON_TYPE)
@@ -63,35 +64,38 @@ public class CounterResourceTest extends JerseyTest {
             assertEquals(200, response.getStatus());
             assertEquals("5", response.readEntity(String.class));
         }
-        verify(counter).increment(eventId);
+        verify(counter).increment(eventId, null);
     }
 
     @Test
     public void shouldReturnHttpCreatedForNonExistingCounter() {
         String eventId = "abc";
-        doReturn(null).when(counter).increment(eventId);
+        String requestId = "testRequestId";
+        doReturn(null).when(counter).increment(eventId, requestId);
         try (Response response = target("counter/count")
                 .path(eventId)
+                .queryParam("requestId", requestId)
                 .request(APPLICATION_JSON_TYPE)
                 .put(Entity.entity("", APPLICATION_JSON_TYPE))) {
             assertEquals(201, response.getStatus());
             assertEquals("", response.readEntity(String.class));
         }
-        verify(counter).increment(eventId);
+        verify(counter).increment(eventId, requestId);
     }
 
     @Test
     public void shouldIncrementByGivenAmount() {
         String eventId = "abc";
-
+        String requestId = "testRequestId";
         try (Response response = target("counter/count")
                 .path(eventId)
                 .queryParam("amount", "5")
+                .queryParam("requestId", requestId)
                 .request(APPLICATION_JSON_TYPE)
                 .put(Entity.entity("", APPLICATION_JSON_TYPE))) {
             assertEquals(200, response.getStatus());
         }
-        verify(counter).increment(eventId, 5);
+        verify(counter).increment(eventId, 5, requestId);
     }
 
     @Test
@@ -111,14 +115,15 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void shouldDeleteCounter() {
         String eventId = "abc";
-        doReturn(2L)
-                .when(counter).remove(eventId);
-        long count = target("counter/count")
+        String requestId = "testRequestId";
+        try(Response response = target("counter/count")
                 .path(eventId)
+                .queryParam("requestId", requestId)
                 .request()
-                .delete(Long.class);
-        assertEquals(2L, count);
-        verify(counter).remove(eventId);
+                .delete(Response.class)) {
+            assertEquals(200, response.getStatus());
+            verify(counter).remove(eventId, requestId);
+        }
     }
 
     @Test

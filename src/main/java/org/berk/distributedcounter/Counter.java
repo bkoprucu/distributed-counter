@@ -7,18 +7,26 @@ import java.util.List;
 public interface Counter {
 
     /**
-     * Increment by 1
+     * Increment counter {@code eventId} by 1
+     *
+     * @param requestId Unique request id for idempotence, can be null
      * @return Former value of the counter, or null if there wasn't a counter
      */
-    Long increment(String eventId);
+    Long increment(String eventId, String requestId);
+
 
     /**
-     * Increment by given `amount`
+     * Increment counter {@code eventId} by given {@code amount}
+     * @param requestId Unique request id for idempotence, can be null
      * @return Former value of the counter, or null if there wasn't a counter
      */
-    Long increment(String eventId, int amount);
+    Long increment(String eventId, int amount, String requestId);
 
-    Long remove(String eventId);
+    /**
+     * Remove counter {@code eventId}
+     * @param requestId Unique request id for idempotence, can be null
+     */
+    void remove(String eventId, String requestId);
 
     Long getCount(String eventId);
 

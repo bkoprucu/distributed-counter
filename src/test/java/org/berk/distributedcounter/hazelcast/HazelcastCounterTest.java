@@ -30,15 +30,15 @@ public class HazelcastCounterTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        counter.reset();
+    public void setUp() {
+        counter.clear();
     }
 
     @Test
     public void shouldIncrementByOne() {
         String eventId = UUID.randomUUID().toString();
         Long count = 10L;
-        LongStream.range(0, count).forEach(value -> counter.increment(eventId));
+        LongStream.range(0, count).forEach(value -> counter.increment(eventId, null));
         assertEquals(count, counter.getCount(eventId));
     }
 
@@ -48,17 +48,38 @@ public class HazelcastCounterTest {
         assertNull(counter.getCount(eventId));
         long count = 10L;
         int amount = 2;
-        LongStream.range(0, count).forEach(value -> counter.increment(eventId, amount));
+        LongStream.range(0, count).forEach(value -> counter.increment(eventId, amount, null));
         assertEquals(count * amount, counter.getCount(eventId).longValue());
+    }
+
+    @Test
+    public void shouldIncrementOnceByOneForSameRequestId() {
+        String eventId = UUID.randomUUID().toString();
+        String requestId = "x";
+        assertNull(counter.getCount(eventId));
+        long count = 10L;
+        LongStream.range(0, count).forEach(value -> counter.increment(eventId, requestId));
+        assertEquals(1, counter.getCount(eventId).longValue());
+    }
+
+    @Test
+    public void shouldIncrementOnceByGivenAmountAndSameRequestId() {
+        String eventId = UUID.randomUUID().toString();
+        String requestId = "1";
+        assertNull(counter.getCount(eventId));
+        long count = 10L;
+        int amount = 2;
+        LongStream.range(0, count).forEach(value -> counter.increment(eventId, amount, requestId));
+        assertEquals(2, counter.getCount(eventId).longValue());
     }
 
     @Test
     public void shouldReturnSize() {
         assertEquals(0, counter.getSize());
-        counter.increment("one");
-        counter.increment("two");
+        counter.increment("one", null);
+        counter.increment("two", null);
         assertEquals(2, counter.getSize());
-        counter.remove("one");
+        counter.remove("one", null);
         assertEquals(1, counter.getSize());
     }
 
@@ -66,17 +87,17 @@ public class HazelcastCounterTest {
     public void shouldListCounters() {
         assertTrue(counter.getCounts().isEmpty());
         List<EventCount> counts = Arrays.asList(new EventCount("one", 1L), new EventCount("two", 2L));
-        counter.increment("one");
-        counter.increment("two", 2);
+        counter.increment("one", null);
+        counter.increment("two", 2, null);
         assertEquals(counts, counter.getCounts());
     }
 
     @Test
-    public void shouldReturnFormerValueOnDelete() {
+    public void shouldRemove() {
         String eventId = UUID.randomUUID().toString();
-        counter.increment(eventId, 5);
+        counter.increment(eventId, 5, null);
         assertEquals(5L, counter.getCount(eventId).longValue());
-        assertEquals(5L, counter.remove(eventId).longValue());
+        counter.remove(eventId, null);
         assertNull(counter.getCount(eventId));
     }
 }
