@@ -1,7 +1,6 @@
 package org.berk.distributedcounter.rest.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 
-public class EventCount implements Comparable<EventCount>{
+public class EventCount implements Comparable<EventCount> {
 
     private final String id;
     private final Long count;

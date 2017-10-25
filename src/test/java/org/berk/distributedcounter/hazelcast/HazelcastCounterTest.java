@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.LongStream;
@@ -18,8 +17,8 @@ import static org.junit.Assert.assertTrue;
 
 public class HazelcastCounterTest {
 
-    final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-            HazelcastConfig.newConfig("DistributedCounter_Test", 9300, Collections.singletonList("localhost")));
+    final HazelcastInstance hazelcastInstance =
+            HazelcastInstanceFactory.getOrCreateHazelcastInstance(HazelcastConfig.multicastDiscovery());
 
     private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance);
 

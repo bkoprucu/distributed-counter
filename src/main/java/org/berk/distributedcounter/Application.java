@@ -15,13 +15,17 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.berk.distributedcounter.AppConfig.DEFAULT_SERVER_PORT;
+
 public class Application {
-    private static final Logger logger = LoggerFactory.getLogger(Application.class);
+    private static final Logger log = LoggerFactory.getLogger(Application.class);
+
+
 
     public static void main(String[] args) {
 
-        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                HazelcastConfig.newConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
+        HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.getOrCreateHazelcastInstance(HazelcastConfig.multicastDiscovery());
 
         ResourceConfig config = new ResourceConfig(CounterResource.class, JacksonFeature.class);
 
@@ -34,7 +38,7 @@ public class Application {
         });
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
-        Server server = new Server(Preferences.SERVER_PORT);
+        Server server = new Server(getServerPort());
         server.setStopAtShutdown(true);
         ServletContextHandler context = new ServletContextHandler(server, "/*");
         context.addServlet(servlet, "/*");
@@ -43,10 +47,19 @@ public class Application {
             server.start();
             server.join();
         } catch (Exception e) {
-            logger.error("Error in application", e);
+            log.error("Error in application", e);
         } finally {
             server.destroy();
         }
+    }
+
+
+    private static int getServerPort() {
+        String portStr = System.getProperty("serverPort");
+        if (portStr != null) {
+            return Integer.parseInt(portStr);
+        }
+        return DEFAULT_SERVER_PORT;
     }
 
 }

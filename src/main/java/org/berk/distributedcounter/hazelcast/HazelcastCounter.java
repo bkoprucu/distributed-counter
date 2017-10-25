@@ -12,19 +12,21 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.berk.distributedcounter.AppConfig.DEDUPLICATION_MAP_TIMEOUT_MINS;
+
 public class HazelcastCounter implements Counter {
+
 
     private static final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
 
     // Keeping counters
     private final IMap<String, Long> distributedMap;
 
-    // For idempotence
+    // For idempotence / deduplication
     private final IMap<String, Boolean> requestIdMap;
-
 
     // Re-usable EntryProcessor for incrementing by one
     private final EntryProcessor<String, Long> incrementByOneProcessor = new AbstractEntryProcessor<String, Long>() {
@@ -45,29 +47,27 @@ public class HazelcastCounter implements Counter {
 
     @Override
     public Long increment(String eventId, String requestId) {
-        // Atomically check for requestId to prevent duplicate processing (idempotency)
-        if(requestId == null || requestIdMap.putIfAbsent(requestId, true, 10, TimeUnit.MINUTES) == null) {
-            return (Long) distributedMap.executeOnKey(eventId, incrementByOneProcessor);
-        }
-        log.warn("Duplicate increment request for eventId: {}, requestId: {}", eventId, requestId);
-        return getCount(eventId);
+        return increment(eventId, 1, requestId);
     }
 
 
     @Override
     public Long increment(String eventId, int amount, String requestId) {
-        if(amount == 0) {
+        if (amount == 0) {
             return getCount(eventId);
         }
-        // Atomically check for requestId to prevent duplicate processing (idempotency)
-        if(requestId == null || requestIdMap.putIfAbsent(requestId, true, 10, TimeUnit.MINUTES) == null) {
-            return (Long) distributedMap.executeOnKey(eventId, new AbstractEntryProcessor<String, Long>() {
-                @Override
-                public Object process(Map.Entry<String, Long> entry) {
-                    return entry.setValue(entry.getValue() == null ? amount
-                                                                   : entry.getValue() + amount);
-                }
-            });
+
+        // Atomically check for requestId for deduplication / idempotency
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, DEDUPLICATION_MAP_TIMEOUT_MINS, MINUTES) == null) {
+            return (Long) distributedMap.executeOnKey(
+                    eventId, amount == 1 ? incrementByOneProcessor
+                                         : new AbstractEntryProcessor<String, Long>() {
+                        @Override
+                        public Object process(Map.Entry<String, Long> entry) {
+                            return entry.setValue(entry.getValue() == null ? amount
+                                                                           : entry.getValue() + amount);
+                        }
+                    });
         }
         log.warn("Duplicate increment request for eventId: {}, requestId: {}", eventId, requestId);
         return getCount(eventId);
@@ -95,7 +95,7 @@ public class HazelcastCounter implements Counter {
 
     @Override
     public void remove(String eventId, String requestId) {
-        if(requestId == null || requestIdMap.putIfAbsent(requestId, true, 10, TimeUnit.MINUTES) == null) {
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, 10, MINUTES) == null) {
             distributedMap.delete(eventId);
             log.info("Removed entry {}", eventId);
             return;
