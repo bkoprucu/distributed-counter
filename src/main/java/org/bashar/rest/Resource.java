@@ -1,49 +1,42 @@
 package org.bashar.rest;
 
 import org.bashar.counter.Counter;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-@Path("home")
+@Path("counter")
 @Singleton
+@Consumes(MediaType.APPLICATION_JSON)
 public class Resource {
 
-    private final Counter counter;
+    private final Counter<String> counter;
 
     @Inject
-    public Resource(Counter counter) {
+    public Resource(Counter<String> counter) {
         this.counter = counter;
     }
 
-    @POST
+    @PUT
     @Path("/increment")
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_PLAIN)
-    public long increment(final String user) {
-        return counter.increment(user);
+    public void increment(@NotEmpty String user) {
+        counter.increment(user);
     }
 
     @GET
     @Path("/getcount")
     @Produces(MediaType.APPLICATION_JSON)
-    public Long getCount(@QueryParam("user") final String user) {
-        return counter.getCount(user);
+    public Long getCount(@NotEmpty @QueryParam("user") final String user) {
+        return counter.get(user);
     }
-
-    @GET
-    @Path("/distribute")
-    public void distribute() {
-        counter.distribute();
-    }
-
 
 }
 
