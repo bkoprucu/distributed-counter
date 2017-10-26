@@ -40,8 +40,8 @@ public class CounterResourceTest extends JerseyTest {
     @Mock
     HazelcastInstance hazelcastInstance;
 
-    private static final GenericType<EventCount<String>> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount<String>>(){};
-    private static final GenericType<List<EventCount<String>>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount<String>>>(){};
+    private static final GenericType<EventCount> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount>(){};
+    private static final GenericType<List<EventCount>> LIST_OF_EVENT_COUNT_TYPE = new GenericType<List<EventCount>>(){};
 
     @Override
     protected Application configure() {
@@ -61,7 +61,7 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void increment() throws Exception {
         int status =  target("counter/increment").request(APPLICATION_JSON_TYPE)
-                .put(Entity.entity(new EventId<String>("abc"), APPLICATION_JSON_TYPE))
+                .put(Entity.entity(new EventId("abc"), APPLICATION_JSON_TYPE))
                 .getStatus();
         assertEquals(200, status);
     }
@@ -69,9 +69,9 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void getCount() throws Exception {
         doReturn(5L).when(counterManager).getCount(eq("user1"));
-        EventCount<String> eventCount =  target("counter/getcount").queryParam("event_id", "user1")
+        EventCount eventCount =  target("counter/getcount").queryParam("event_id", "user1")
                 .request(APPLICATION_JSON_TYPE).get(EVENT_COUNT_STRING_TYPE);
-        assertEquals(  new EventCount<String>("user1", 5L), eventCount);
+        assertEquals(  new EventCount("user1", 5L), eventCount);
     }
 
     @Test
@@ -85,13 +85,13 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void listAllCounters() throws Exception {
         when(counterManager.listAllCounters(null , null)).thenReturn(
-                Arrays.asList(new EventCount<String>("user1", 1L),
-                        new EventCount<String>("user2", 2L)));
-        List<EventCount<String>> counters = target("counter/list")
-                .request(APPLICATION_JSON_TYPE).get(new GenericType<List<EventCount<String>>>() {});
+                Arrays.asList(new EventCount("user1", 1L),
+                        new EventCount("user2", 2L)));
+        List<EventCount> counters = target("counter/list")
+                .request(APPLICATION_JSON_TYPE).get(LIST_OF_EVENT_COUNT_TYPE);
         assertEquals(2, counters.size());
-        assertEquals(new EventCount<>("user1", 1L), counters.get(0));
-        assertEquals(new EventCount<>("user2", 2L), counters.get(1));
+        assertEquals(new EventCount("user1", 1L), counters.get(0));
+        assertEquals(new EventCount("user2", 2L), counters.get(1));
     }
 
     @Test

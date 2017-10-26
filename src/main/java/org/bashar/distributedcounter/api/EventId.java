@@ -2,24 +2,24 @@ package org.bashar.distributedcounter.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 /**
  * EventId to count the events
- * @param <T> Type of the id of the event. Currently, only String is supported by rest endpoint
  */
-public class EventId<T> {
+public class EventId {
 
-    private final T id;
+    private final String id;
 
     @JsonCreator
-    public EventId(@NotNull @JsonProperty("id") T id) {
+    public EventId(@NotEmpty @JsonProperty("id") String id) {
         this.id = id;
     }
 
-    public T getId() {
+    public String getId() {
         return id;
     }
 
@@ -27,8 +27,8 @@ public class EventId<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EventId<?> event = (EventId<?>) o;
-        return Objects.equals(id, event.id);
+        EventId eventId = (EventId) o;
+        return Objects.equals(id, eventId.id);
     }
 
     @Override

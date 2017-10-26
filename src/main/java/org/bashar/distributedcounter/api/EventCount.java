@@ -8,21 +8,20 @@ import java.util.Objects;
 
 /**
  * Response with id of the event and counter value
- * @param <T>  Type of the id of the event. Only String is supported by rest endpoint now
  */
-public class EventCount<T> implements Comparable<EventCount>{
+public class EventCount implements Comparable<EventCount>{
 
-    private final T id;
+    private final String id;
     private final Long count;
 
     @JsonCreator
-    public EventCount(@NotNull @JsonProperty("id") T id,
-                      @NotNull @JsonProperty("count") Long count) {
+    public EventCount(@JsonProperty("id") String id,
+                      @JsonProperty("count") Long count) {
         this.id = id;
         this.count = count;
     }
 
-    public T getId() {
+    public String getId() {
         return id;
     }
 
@@ -39,9 +38,9 @@ public class EventCount<T> implements Comparable<EventCount>{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EventCount<?> event = (EventCount<?>) o;
-        return Objects.equals(id, event.id) &&
-                Objects.equals(count, event.count);
+        EventCount that = (EventCount) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(count, that.count);
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import org.bashar.distributedcounter.counter.CounterManager;
 import org.bashar.distributedcounter.counter.PeriodicDistributingCounterManager;
+import org.bashar.distributedcounter.rest.CounterResource;
+import org.bashar.distributedcounter.rest.CustomExceptionMapper;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -26,17 +28,17 @@ public class CounterApplication {
 
         final HazelcastInstance hazelcastInstance =
                 HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                        HazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME,"localhost"));
+                        HazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME, "localhost"));
 
-        final ResourceConfig config = new ResourceConfig();
-        config.packages("org.bashar.rest");
-        config.register(JacksonFeature.class);
-        config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+        final ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
+        //config.packages("org.bashar.rest");
+        //config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
         config.register(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(hazelcastInstance).to(HazelcastInstance.class);
-                bind(PeriodicDistributingCounterManager.class).to(new TypeLiteral<CounterManager<String>>(){}.getType());
+                bind(PeriodicDistributingCounterManager.class).to(new TypeLiteral<CounterManager<String>>() {
+                }.getType());
             }
         });
 
@@ -50,7 +52,7 @@ public class CounterApplication {
             server.start();
             server.join();
         } catch (Exception e) {
-            logger.error("SEVERE: Error in application" ,e);
+            logger.error("SEVERE: Error in application", e);
         } finally {
             server.destroy();
         }

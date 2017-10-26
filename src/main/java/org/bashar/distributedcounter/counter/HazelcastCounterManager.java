@@ -2,6 +2,8 @@ package org.bashar.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.PredicateBuilder;
 import org.bashar.distributedcounter.api.EventCount;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
@@ -44,15 +46,16 @@ public class HazelcastCounterManager<T> implements CounterManager<T> {
     }
 
     @Override
-    public List<EventCount<T>> listAllCounters(Integer from, Integer to) {
+    public List<EventCount> listAllCounters(Integer from, Integer to) {
+        //TODO improve this implementation, also not sorted: buggy
         final AtomicInteger toAtomic = to == null ? null : new AtomicInteger(to);
-        final LinkedList<EventCount<T>> result = new LinkedList<>();
+        final LinkedList<EventCount> result = new LinkedList<>();
         distributedMap.entrySet().stream()
-                .sorted()
                 .skip(from == null ? 0 : from)
-                .forEachOrdered(entry -> {
+                .forEach(entry -> {
                     if(toAtomic == null || toAtomic.getAndDecrement()>0) {
-                        result.add(new EventCount<>(entry.getKey(), entry.getValue()));
+                        // TODO toString?
+                        result.add(new EventCount(entry.getKey().toString(), entry.getValue()));
                         // Ugly, but IMap refuses to work with Collectors.collect()
                     }
                 });

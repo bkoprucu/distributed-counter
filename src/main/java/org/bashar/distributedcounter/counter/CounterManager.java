@@ -1,6 +1,5 @@
 package org.bashar.distributedcounter.counter;
 
-import com.sun.istack.internal.Nullable;
 import org.bashar.distributedcounter.api.EventCount;
 import org.jvnet.hk2.annotations.Contract;
 
@@ -22,7 +21,7 @@ public interface CounterManager<T> {
      * @param to End index for paging. null to getCount all items
      * @return Map containing counters
      */
-    List<EventCount<T>> listAllCounters(@Nullable Integer from , @Nullable Integer to);
+    List<EventCount> listAllCounters(Integer from , Integer to);
 
     /**
      * Returns total number of counters

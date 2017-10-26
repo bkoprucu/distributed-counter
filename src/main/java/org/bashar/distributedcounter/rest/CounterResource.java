@@ -8,6 +8,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -33,7 +34,7 @@ public class CounterResource {
 
     @PUT
     @Path("/increment")
-    public Response increment(@Valid EventId<String> eventId) {
+    public Response increment(@Valid EventId eventId) {
         counterManager.increment(eventId.getId());
         return Response.ok().build();
     }
@@ -41,24 +42,24 @@ public class CounterResource {
     @GET
     @Path("/getcount")
     @Produces(MediaType.APPLICATION_JSON)
-    public EventCount<String> getCount(@NotEmpty(message = "Parameter 'event_id' is mandatory")
-                                           @QueryParam("event_id") final String eventId) {
-        return new EventCount<>(eventId, counterManager.getCount(eventId));
+    public EventCount getCount(@NotEmpty(message = "Parameter 'event_id' is mandatory")
+                               @QueryParam("event_id") final String eventId) {
+        return new EventCount(eventId, counterManager.getCount(eventId));
     }
 
 
     @GET
     @Path("/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventCount<String>> listAllCounters(@QueryParam("from") Integer from,
-                                                    @QueryParam("to") Integer to) {
-        if(from != null && from < 0) {
+    public List<EventCount> listAllCounters(@QueryParam("from") Integer from,
+                                            @QueryParam("to") Integer to) {
+        if (from != null && from < 0) {
             throw new IllegalArgumentException("Parameter 'from' cannot be negative");
         }
-        if(to != null) {
-            if(to < 0)
+        if (to != null) {
+            if (to < 0)
                 throw new IllegalArgumentException("Parameter 'from' cannot be negative");
-            if(from != null && from > to)
+            if (from != null && from > to)
                 throw new IllegalArgumentException("Parameter 'from' must have smaller value than 'to'");
         }
         return counterManager.listAllCounters(from, to);

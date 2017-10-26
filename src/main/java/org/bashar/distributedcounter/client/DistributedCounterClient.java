@@ -1,9 +1,8 @@
 package org.bashar.distributedcounter.client;
 
-import com.sun.istack.internal.Nullable;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.bashar.distributedcounter.api.EventCount;
-import org.eclipse.jetty.util.StringUtil;
+import org.bashar.distributedcounter.api.EventId;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
@@ -13,6 +12,7 @@ import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -23,20 +23,17 @@ import java.util.List;
 import static org.eclipse.jetty.util.StringUtil.isBlank;
 
 public class DistributedCounterClient {
-
     private static final Logger log = LoggerFactory.getLogger(DistributedCounterClient.class);
 
     private static final String URI_FORMAT = "http://%s:%d/counter";
-
     private final JerseyClient client;
-
     private final URI uri;
 
 
-    //TODO error handling, refactoring
+    //TODO error handling
 
-    private static final GenericType<EventCount<String>> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount<String>>(){};
-    private static final GenericType<List<EventCount<String>>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount<String>>>(){};
+    private static final GenericType<EventCount> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount>(){};
+    private static final GenericType<List<EventCount>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount>>(){};
 
 
     public DistributedCounterClient(String host, int port, long connectTimeoutMs, long readTimeoutMs, int threadPoolSize) throws URISyntaxException {
@@ -60,11 +57,12 @@ public class DistributedCounterClient {
     /**
      * Gets count of event identified with eventId
      */
-    public long getEventCount(String eventId) {
+    public long getCount(String eventId) {
         if(isBlank(eventId)) {
             throw new IllegalArgumentException("eventId is mandatory");
         }
         return client.target(uri).path("/getcount")
+                .queryParam("event_id", eventId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get(EVENT_COUNT_STRING_TYPE).getCount();
     }
@@ -82,8 +80,7 @@ public class DistributedCounterClient {
         }
         Response response = client.target(uri).path("/increment")
                 .queryParam("event_id", eventId)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get();
+                .request().put(Entity.entity(new EventId(eventId), MediaType.APPLICATION_JSON_TYPE));
         return response.getStatusInfo();
     }
 
@@ -94,8 +91,8 @@ public class DistributedCounterClient {
      * @param to Optional, if omittted all the items beginning from 'from' will be listed
      * @return List of #EventCount objects indicating the Event ids with their counts
      */
-    public List<EventCount<String>> list(@Nullable Integer from,
-                                         @Nullable Integer to) {
+    public List<EventCount> list(Integer from,
+                                 Integer to) {
         return client.target(uri).path("/list")
                 .queryParam("from", from)
                 .queryParam("to", to)
