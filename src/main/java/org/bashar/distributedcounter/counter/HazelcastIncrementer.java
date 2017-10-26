@@ -1,4 +1,4 @@
-package org.bashar.counter;
+package org.bashar.distributedcounter.counter;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.AbstractEntryProcessor;
@@ -8,43 +8,43 @@ import java.util.Map;
 
 /**
  * Atomic increment operations on Hazelcast IMap
+ * Avoids locks by
+ *
  * @param <T> Key of the Hazelcast IMap
  */
 class HazelcastIncrementer<T> {
     private final IMap<T, Long> distributedMap;
 
+    // EntryProcessor for incrementing one by one
     private final EntryProcessor<T, Long> singleIncrementer;
 
-    static final Long ONE = 1L;
 
     HazelcastIncrementer(IMap<T, Long> distributedMap) {
         this.distributedMap = distributedMap;
+
         this.singleIncrementer = new AbstractEntryProcessor<T, Long>() {
             @Override
             public Object process(Map.Entry<T, Long> entry) {
-                final Long cnt = entry.getValue() + 1L;
-                entry.setValue(cnt);
-                return cnt;
+                return entry.setValue(entry.getValue() + 1L);
             }
         };
     }
 
-    Long increment(T eventId) {
-        if(distributedMap.putIfAbsent(eventId, ONE) == null) {
-            return ONE;
-        } else {
-            return (Long) distributedMap.executeOnKey(eventId, singleIncrementer);
+    void increment(T counterId) {
+        if(counterId == null) {
+            throw new IllegalArgumentException();
+        }
+        if (distributedMap.putIfAbsent(counterId, 1L) != null) {
+            distributedMap.executeOnKey(counterId, singleIncrementer);
         }
     }
 
-    Long increment(T eventId, long amount) {
-        if(amount == 0L || eventId == null) {
-            return 0L;
+    void increment(T counterId, long amount) {
+        if (counterId == null) {
+            throw new IllegalArgumentException();
         }
-        if(distributedMap.putIfAbsent(eventId, amount) == null) {
-            return amount;
-        } else {
-            return (Long) distributedMap.executeOnKey(eventId, new AbstractEntryProcessor<T, Long>() {
+        if (amount > 0L && distributedMap.putIfAbsent(counterId, amount) != null) {
+            distributedMap.executeOnKey(counterId, new AbstractEntryProcessor<T, Long>() {
                 @Override
                 public Object process(Map.Entry<T, Long> entry) {
                     return entry.setValue(entry.getValue() + amount);
@@ -52,4 +52,7 @@ class HazelcastIncrementer<T> {
             });
         }
     }
+
+
 }
+

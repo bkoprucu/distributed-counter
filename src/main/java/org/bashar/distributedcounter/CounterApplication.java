@@ -1,9 +1,9 @@
-package org.bashar;
+package org.bashar.distributedcounter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import org.bashar.counter.Counter;
-import org.bashar.counter.PeriodicDistributingCounter;
+import org.bashar.distributedcounter.counter.CounterManager;
+import org.bashar.distributedcounter.counter.PeriodicDistributingCounterManager;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -16,13 +16,17 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class App {
+import static org.bashar.distributedcounter.SimpleHazelcastConfigFactory.DEFAULT_INSTANCE_NAME;
 
-    private static final Logger logger = LoggerFactory.getLogger(App.class);
+public class CounterApplication {
+
+    private static final Logger logger = LoggerFactory.getLogger(CounterApplication.class);
 
     public static void main(String[] args) {
 
-        final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(HazelcastConfig.INSTANCE.getConfig());
+        final HazelcastInstance hazelcastInstance =
+                HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+                        SimpleHazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME,"localhost"));
 
         final ResourceConfig config = new ResourceConfig();
         config.packages("org.bashar.rest");
@@ -32,7 +36,7 @@ public class App {
             @Override
             protected void configure() {
                 bind(hazelcastInstance).to(HazelcastInstance.class);
-                bind(PeriodicDistributingCounter.class).to(new TypeLiteral<Counter<String>>(){}.getType());
+                bind(PeriodicDistributingCounterManager.class).to(new TypeLiteral<CounterManager<String>>(){}.getType());
             }
         });
 
