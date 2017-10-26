@@ -33,9 +33,8 @@ public class CounterResource {
 
     @PUT
     @Path("/increment")
-    public Response increment(@NotEmpty(message = "Parameter 'event_id' is mandatory")
-                                  @QueryParam("event_id") String eventId) {
-        counterManager.increment(eventId);
+    public Response increment(@Valid EventId<String> eventId) {
+        counterManager.increment(eventId.getId());
         return Response.ok().build();
     }
 

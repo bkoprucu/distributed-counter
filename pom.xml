@@ -74,6 +74,8 @@
             <version>${jersey.version}</version>
         </dependency>
 
+         x
+
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
@@ -91,6 +93,7 @@
             <artifactId>hazelcast-aws</artifactId>
             <version>2.1.0</version>
         </dependency>
+
 
         <!-- TODO configure logback instead -->
         <dependency>

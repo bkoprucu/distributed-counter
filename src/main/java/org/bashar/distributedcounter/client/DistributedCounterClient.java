@@ -34,6 +34,7 @@ public class DistributedCounterClient {
 
 
     //TODO error handling, refactoring
+
     private static final GenericType<EventCount<String>> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount<String>>(){};
     private static final GenericType<List<EventCount<String>>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount<String>>>(){};
 

@@ -2,6 +2,7 @@ package org.bashar.distributedcounter.rest;
 
 import com.hazelcast.core.HazelcastInstance;
 import org.bashar.distributedcounter.api.EventCount;
+import org.bashar.distributedcounter.api.EventId;
 import org.bashar.distributedcounter.counter.CounterManager;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,6 +46,8 @@ public class CounterResourceTest extends JerseyTest {
     @Mock
     HazelcastInstance hazelcastInstance;
 
+    private static final GenericType<EventCount<String>> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount<String>>(){};
+    private static final GenericType<List<EventCount<String>>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount<String>>>(){};
 
     @Override
     protected Application configure() {
@@ -62,8 +66,8 @@ public class CounterResourceTest extends JerseyTest {
 
     @Test
     public void increment() throws Exception {
-        int status =  target("counter/increment").request()
-                .put(Entity.entity("user1", MediaType.APPLICATION_JSON_TYPE))
+        int status =  target("counter/increment").request(APPLICATION_JSON_TYPE)
+                .put(Entity.entity(new EventId<String>("abc"), APPLICATION_JSON_TYPE))
                 .getStatus();
         assertEquals(200, status);
     }
@@ -71,16 +75,16 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void getCount() throws Exception {
         doReturn(5L).when(counterManager).getCount(eq("user1"));
-        Long count =  target("counter/getcount").queryParam("counterid", "user1")
-                .request(MediaType.APPLICATION_JSON_TYPE).get(Long.class);
-        assertEquals(5L, count.longValue());
+        EventCount<String> eventCount =  target("counter/getcount").queryParam("event_id", "user1")
+                .request(APPLICATION_JSON_TYPE).get(EVENT_COUNT_STRING_TYPE);
+        assertEquals(  new EventCount<String>("user1", 5L), eventCount);
     }
 
     @Test
     public void getSize() throws Exception {
         doReturn(3).when(counterManager).getSize();
         Integer size =  target("counter/listsize")
-                .request(MediaType.APPLICATION_JSON_TYPE).get(Integer.class);
+                .request(APPLICATION_JSON_TYPE).get(Integer.class);
         assertEquals(3, size.intValue());
     }
 
@@ -90,7 +94,7 @@ public class CounterResourceTest extends JerseyTest {
                 Arrays.asList(new EventCount<String>("user1", 1L),
                         new EventCount<String>("user2", 2L)));
         List<EventCount<String>> counters = target("counter/list")
-                .request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<EventCount<String>>>() {});
+                .request(APPLICATION_JSON_TYPE).get(new GenericType<List<EventCount<String>>>() {});
         assertEquals(2, counters.size());
         assertEquals(new EventCount<>("user1", 1L), counters.get(0));
         assertEquals(new EventCount<>("user2", 2L), counters.get(1));
@@ -99,10 +103,10 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void errorHandling() throws Exception {
         when(counterManager.getCount(anyString())).thenThrow(new IllegalArgumentException());
-        Response response =  target("counter/getcount").queryParam("counterid", "user1")
-                .request(MediaType.APPLICATION_JSON_TYPE).get();
+        Response response =  target("counter/getcount").queryParam("event_id", "user1")
+                .request(APPLICATION_JSON_TYPE).get();
         assertEquals(BAD_REQUEST.getStatusCode(), response.getStatus());
-        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
+        assertEquals(APPLICATION_JSON_TYPE, response.getMediaType());
     }
 
     //TODO other cases
