@@ -1,6 +1,7 @@
 package org.bashar.distributedcounter.rest;
 
 import com.hazelcast.core.HazelcastInstance;
+import org.bashar.distributedcounter.api.EventCount;
 import org.bashar.distributedcounter.counter.CounterManager;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
@@ -22,7 +23,9 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -84,12 +87,13 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void listAllCounters() throws Exception {
         when(counterManager.listAllCounters(null , null)).thenReturn(
-                new HashMap<String, Long>() {{ put("user1", 1L);put("user2", 2L); }});
-        Map<String, Long> counters = target("counter/list")
-                .request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<Map<String,Long>>() {});
+                Arrays.asList(new EventCount<String>("user1", 1L),
+                        new EventCount<String>("user2", 2L)));
+        List<EventCount<String>> counters = target("counter/list")
+                .request(MediaType.APPLICATION_JSON_TYPE).get(new GenericType<List<EventCount<String>>>() {});
         assertEquals(2, counters.size());
-        assertEquals(1L, counters.get("user1").longValue());
-        assertEquals(2L, counters.get("user2").longValue());
+        assertEquals(new EventCount<>("user1", 1L), counters.get(0));
+        assertEquals(new EventCount<>("user2", 2L), counters.get(1));
     }
 
     @Test

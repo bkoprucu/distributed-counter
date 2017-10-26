@@ -5,7 +5,8 @@ import com.hazelcast.config.NetworkConfig;
 
 import java.util.Arrays;
 
-public class SimpleHazelcastConfigFactory {
+//TODO refactor
+public class HazelcastConfigFactory {
 
     private static final int DEFAULT_PORT = 9500;
 

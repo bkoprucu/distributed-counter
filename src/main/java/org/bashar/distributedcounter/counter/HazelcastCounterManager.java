@@ -2,12 +2,15 @@ package org.bashar.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import org.bashar.distributedcounter.api.EventCount;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,15 +44,15 @@ public class HazelcastCounterManager<T> implements CounterManager<T> {
     }
 
     @Override
-    public Map<T, Long> listAllCounters(Integer from, Integer to) {
+    public List<EventCount<T>> listAllCounters(Integer from, Integer to) {
         final AtomicInteger toAtomic = to == null ? null : new AtomicInteger(to);
-        final LinkedHashMap<T, Long> result = new LinkedHashMap<>();
+        final LinkedList<EventCount<T>> result = new LinkedList<>();
         distributedMap.entrySet().stream()
                 .sorted()
                 .skip(from == null ? 0 : from)
                 .forEachOrdered(entry -> {
                     if(toAtomic == null || toAtomic.getAndDecrement()>0) {
-                        result.put(entry.getKey(), entry.getValue());
+                        result.add(new EventCount<>(entry.getKey(), entry.getValue()));
                         // Ugly, but IMap refuses to work with Collectors.collect()
                     }
                 });

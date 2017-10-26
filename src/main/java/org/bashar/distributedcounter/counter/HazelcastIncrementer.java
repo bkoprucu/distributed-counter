@@ -30,21 +30,21 @@ class HazelcastIncrementer<T> {
         };
     }
 
-    void increment(T counterId) {
-        if(counterId == null) {
+    void increment(T eventId) {
+        if(eventId == null) {
             throw new IllegalArgumentException();
         }
-        if (distributedMap.putIfAbsent(counterId, 1L) != null) {
-            distributedMap.executeOnKey(counterId, singleIncrementer);
+        if (distributedMap.putIfAbsent(eventId, 1L) != null) {
+            distributedMap.executeOnKey(eventId, singleIncrementer);
         }
     }
 
-    void increment(T counterId, long amount) {
-        if (counterId == null) {
+    void increment(T eventId, long amount) {
+        if (eventId == null) {
             throw new IllegalArgumentException();
         }
-        if (amount > 0L && distributedMap.putIfAbsent(counterId, amount) != null) {
-            distributedMap.executeOnKey(counterId, new AbstractEntryProcessor<T, Long>() {
+        if (amount > 0L && distributedMap.putIfAbsent(eventId, amount) != null) {
+            distributedMap.executeOnKey(eventId, new AbstractEntryProcessor<T, Long>() {
                 @Override
                 public Object process(Map.Entry<T, Long> entry) {
                     return entry.setValue(entry.getValue() + amount);

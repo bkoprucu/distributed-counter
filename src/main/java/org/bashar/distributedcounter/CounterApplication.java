@@ -16,7 +16,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.bashar.distributedcounter.SimpleHazelcastConfigFactory.DEFAULT_INSTANCE_NAME;
+import static org.bashar.distributedcounter.HazelcastConfigFactory.DEFAULT_INSTANCE_NAME;
 
 public class CounterApplication {
 
@@ -26,7 +26,7 @@ public class CounterApplication {
 
         final HazelcastInstance hazelcastInstance =
                 HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                        SimpleHazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME,"localhost"));
+                        HazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME,"localhost"));
 
         final ResourceConfig config = new ResourceConfig();
         config.packages("org.bashar.rest");
