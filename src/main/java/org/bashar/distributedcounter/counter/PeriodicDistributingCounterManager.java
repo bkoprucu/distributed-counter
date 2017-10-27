@@ -1,6 +1,7 @@
 package org.bashar.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
+import org.bashar.distributedcounter.Preferences;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +23,15 @@ import java.util.stream.Collectors;
 
 /**
  * Counts the events on local ConcurrentHashMap using AtomicLong, and synchronizes to Hazelcast periodically.
- * This way it can perform better than HazelcastCounter, though the results will be delayed by SYNC_INTERVAL
+ * This way it can perform better than HazelcastCounter, though the results will be delayed by syncInterval
  */
 @Service
 public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManager<T> {
 
     private final Logger log = LoggerFactory.getLogger(PeriodicDistributingCounterManager.class);
 
-    // Synchronize with Hazelcast every 500ms
-    private static final long SYNC_INTERVAL = 500L;
+    // Delay between sync operations
+    private final long syncInterval = Preferences.PERIODIC_COUNTER_SYNC_DELAY;
 
     private final ConcurrentHashMap<T, AtomicLong> localMap;
     private final ScheduledExecutorService scheduledExecutor;
@@ -41,19 +42,23 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
     // Used for disabling local counting during shutdown and #resetLocalMap calls
     private final AtomicBoolean localCounterEnabled;
 
+    // Sync status
+    private final AtomicBoolean syncInProgress;
+
     @Inject
     public PeriodicDistributingCounterManager(HazelcastInstance hazelcastInstance) {
         super(hazelcastInstance);
         localMap = new ConcurrentHashMap<>();
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         localCounterEnabled = new AtomicBoolean(true);
+        syncInProgress = new AtomicBoolean(false);
         lock = new ReentrantLock();
     }
 
     @PostConstruct
     void init() {
         scheduledExecutor.scheduleWithFixedDelay(this::sync,
-                SYNC_INTERVAL, SYNC_INTERVAL, TimeUnit.MILLISECONDS);
+                syncInterval, syncInterval, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -87,27 +92,29 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
     }
 
 
-    long getLocalCount(T eventId) {
-        final AtomicLong cnt = localMap.get(eventId);
-        return cnt == null ? 0L : cnt.get();
+    public long getSyncInterval() {
+        return syncInterval;
     }
 
-    long getSyncInterval() {
-        return SYNC_INTERVAL;
+    public boolean isSyncInProgress() {
+        return syncInProgress.get();
     }
 
     /**
      * Sends local event count to Hazelcast, without locking
      */
      void sync() {
-        log.debug("sync() initiated");
-        localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
-            final AtomicLong atomicLong = entry.getValue();
-            final long count = atomicLong.get();
-            hazelcastIncrementer.increment(entry.getKey(), count);
-            atomicLong.addAndGet(-count);
-        });
-        log.debug("sync() completed");
+        if(syncInProgress.compareAndSet(false, true)) {
+            log.debug("sync() initiated");
+            localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
+                final AtomicLong atomicLong = entry.getValue();
+                final long count = atomicLong.get();
+                hazelcastIncrementer.increment(entry.getKey(), count);
+                atomicLong.addAndGet(-count);
+            });
+            log.debug("sync() completed");
+            syncInProgress.compareAndSet(true, false);
+        }
     }
 
     /**

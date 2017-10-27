@@ -2,16 +2,18 @@ package org.bashar.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import org.bashar.distributedcounter.HazelcastConfigFactory;
+import org.bashar.distributedcounter.HazelcastConfig;
+import org.bashar.distributedcounter.Preferences;
 
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 public class HazelcastTest {
-    public static final String HAZELCAST_INSTANCE_NAME = "DistributedCounter_Test";
 
-    protected final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
-            .getOrCreateHazelcastInstance(HazelcastConfigFactory.hazelCastConfig(HAZELCAST_INSTANCE_NAME,"localhost"));
+    protected final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+            HazelcastConfig.getConfig("DistributedCounter_Test", 9300, Collections.singletonList("localhost")));
 
     protected ExecutorService load(CounterManager counterManager, int threads, int eventCount) {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -19,9 +21,7 @@ public class HazelcastTest {
             final int count = eventCount + t;
             final String id = "id" + t;
             executor.submit(() -> {
-                for(int i=0; i < count; i++) {
-                    counterManager.increment(id);
-                }
+                IntStream.range(0, count).forEach(value -> counterManager.increment(id));
             });
         }
         return executor;

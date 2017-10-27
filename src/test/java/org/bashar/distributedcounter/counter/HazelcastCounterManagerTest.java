@@ -57,7 +57,7 @@ public class HazelcastCounterManagerTest extends HazelcastTest {
         }
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
-        // Ensure all counters have correct values
+        // Counters should have correct values
         IntStream.range(0, threads)
                 .forEach(value -> assertEquals(eventCount+value, counterManager.getCount("id"+value)));
 

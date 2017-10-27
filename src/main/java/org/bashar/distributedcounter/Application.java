@@ -13,22 +13,19 @@ import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.bashar.distributedcounter.HazelcastConfigFactory.DEFAULT_INSTANCE_NAME;
+public class Application {
 
-public class CounterApplication {
-
-    private static final Logger logger = LoggerFactory.getLogger(CounterApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     public static void main(String[] args) {
 
-        final HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                        HazelcastConfigFactory.hazelCastConfig(DEFAULT_INSTANCE_NAME, "localhost"));
+
+        final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+                        HazelcastConfig.getConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
 
         final ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
         //config.packages("org.bashar.rest");
@@ -43,7 +40,7 @@ public class CounterApplication {
         });
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
-        Server server = new Server(8080);
+        Server server = new Server(Preferences.SERVER_PORT);
         server.setStopAtShutdown(true);
         ServletContextHandler context = new ServletContextHandler(server, "/*");
         context.addServlet(servlet, "/*");
