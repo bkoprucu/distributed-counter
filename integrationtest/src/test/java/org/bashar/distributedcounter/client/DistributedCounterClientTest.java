@@ -25,11 +25,11 @@ public class DistributedCounterClientTest {
     private static final int SERVER_PORT = 8080;
 
     private DistributedCounterApacheClient client = DistributedCounterApacheClient.newClient(
-            SERVER_HOST, SERVER_PORT, 250, 1000, 5);
+            SERVER_HOST, SERVER_PORT, 250, 1000, 8);
 
     @Test
     public void shouldIncrementAndRead() throws Exception {
-        final int count = 10_000;
+        final int count = 100;
         String eventId = generateEventIdPrefix();
         IntStream.range(0, count).forEach(i -> client.increment(eventId));
         await().atMost(5, SECONDS).until(() -> count == client.getCount(eventId));
@@ -60,7 +60,7 @@ public class DistributedCounterClientTest {
 
     @Test
     public void shouldHandleLoad() throws Exception {
-        final int threads = 4;
+        final int threads = 8;
         final int events = 20000;
 
         String prefix = generateEventIdPrefix();
@@ -71,12 +71,8 @@ public class DistributedCounterClientTest {
         }));
         long end = System.currentTimeMillis() - start;
 
-        System.out.println("Performance: " + threads * events * 1000 / end + " requests / second");
-//
-//        await().atMost(30, SECONDS).until(() -> client.getListSize() == threads && client.getCount(prefix + 23) == events);
-//        IntStream.range(0, threads).forEach(threadId -> IntStream.range(0, events).forEach(eventNumber ->{
-//            assertEquals(events, client.getCount(prefix + threadId));
-//        }));
+        System.out.println("\nPerformance: " + threads * events * 1000 / end + " requests / second\n");
+
     }
 
     private static String generateEventIdPrefix() {

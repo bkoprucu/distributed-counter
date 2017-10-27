@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import javax.annotation.Resource;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.GenericType;
@@ -47,14 +48,14 @@ public class CounterResourceTest extends JerseyTest {
 
     @Override
     protected Application configure() {
-
-        final ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
+        ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
         config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
         config.register(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(hazelcastInstance).to(HazelcastInstance.class);
-                bind(counterManager).to(new TypeLiteral<CounterManager<String>>(){}.getType());
+                bind(counterManager).to(new TypeLiteral<CounterManager<String>>() {
+                }.getType());
             }
         });
         return config;
