@@ -69,7 +69,7 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void getCount() throws Exception {
         doReturn(5L).when(counterManager).getCount(eq("user1"));
-        EventCount eventCount =  target("counter/getcount").queryParam("event_id", "user1")
+        EventCount eventCount =  target("counter/count").queryParam("event_id", "user1")
                 .request(APPLICATION_JSON_TYPE).get(EVENT_COUNT_STRING_TYPE);
         assertEquals(  new EventCount("user1", 5L), eventCount);
     }
@@ -87,7 +87,7 @@ public class CounterResourceTest extends JerseyTest {
         when(counterManager.listAllCounters(null , null)).thenReturn(
                 Arrays.asList(new EventCount("user1", 1L),
                         new EventCount("user2", 2L)));
-        List<EventCount> counters = target("counter/list")
+        List<EventCount> counters = target("counter/counters")
                 .request(APPLICATION_JSON_TYPE).get(LIST_OF_EVENT_COUNT_TYPE);
         assertEquals(2, counters.size());
         assertEquals(new EventCount("user1", 1L), counters.get(0));
@@ -97,7 +97,7 @@ public class CounterResourceTest extends JerseyTest {
     @Test
     public void errorHandling() throws Exception {
         when(counterManager.getCount(anyString())).thenThrow(new IllegalArgumentException());
-        Response response =  target("counter/getcount").queryParam("event_id", "user1")
+        Response response =  target("counter/count").queryParam("event_id", "user1")
                 .request(APPLICATION_JSON_TYPE).get();
         assertEquals(BAD_REQUEST.getStatusCode(), response.getStatus());
         assertEquals(APPLICATION_JSON_TYPE, response.getMediaType());

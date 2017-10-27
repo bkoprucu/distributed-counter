@@ -14,35 +14,49 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.eclipse.jetty.util.StringUtil.isBlank;
 
-public class DistributedCounterClient {
-    private static final Logger log = LoggerFactory.getLogger(DistributedCounterClient.class);
+//TODO fix bugs
+public class DistributedCounterJerseyClient {
+    private static final Logger log = LoggerFactory.getLogger(DistributedCounterJerseyClient.class);
 
     private static final String URI_FORMAT = "http://%s:%d/counter";
     private final JerseyClient client;
     private final URI uri;
 
+    /** Default connect timeout in milliseconds */
+    public static final long DEFAULT_CONNECT_TIMEOUT = 1000;
 
-    //TODO error handling
+    /** Default request timeout in milliseconds */
+    public static final long DEFAULT_READ_TIMEOUT = 10000;
 
     private static final GenericType<EventCount> EVENT_COUNT_STRING_TYPE = new GenericType<EventCount>(){};
     private static final GenericType<List<EventCount>> LIST_OF_EVENT_COUNT_STRING_TYPE = new GenericType<List<EventCount>>(){};
 
 
-    public DistributedCounterClient(String host, int port, long connectTimeoutMs, long readTimeoutMs, int threadPoolSize) throws URISyntaxException {
+
+    public DistributedCounterJerseyClient(String host, int port, int threadPoolSize) {
+        this(String.format(URI_FORMAT, host, port), DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, threadPoolSize);
+    }
+
+
+    public DistributedCounterJerseyClient(String host, int port, long connectTimeoutMs, long readTimeoutMs, int threadPoolSize) {
         this(String.format(URI_FORMAT, host, port), connectTimeoutMs, readTimeoutMs, threadPoolSize);
     }
 
 
-    public DistributedCounterClient(String uri, long connectTimeoutMs, long readTimeoutMs, int threadPoolSize) throws URISyntaxException {
-        this.uri = new URI(uri);
+    public DistributedCounterJerseyClient(String uri, long connectTimeoutMs, long readTimeoutMs, int threadPoolSize)  {
+        try {
+            this.uri = new URI(uri);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.property(ClientProperties.READ_TIMEOUT, readTimeoutMs);
         clientConfig.property(ClientProperties.CONNECT_TIMEOUT, connectTimeoutMs);
@@ -61,9 +75,9 @@ public class DistributedCounterClient {
         if(isBlank(eventId)) {
             throw new IllegalArgumentException("eventId is mandatory");
         }
-        return client.target(uri).path("/getcount")
+        return client.target(uri).path("/count")
                 .queryParam("event_id", eventId)
-                .request(MediaType.APPLICATION_JSON_TYPE)
+                .request(APPLICATION_JSON_TYPE)
                 .get(EVENT_COUNT_STRING_TYPE).getCount();
     }
 
@@ -79,8 +93,8 @@ public class DistributedCounterClient {
             throw new IllegalArgumentException("eventId is mandatory");
         }
         Response response = client.target(uri).path("/increment")
-                .queryParam("event_id", eventId)
-                .request().put(Entity.entity(new EventId(eventId), MediaType.APPLICATION_JSON_TYPE));
+                .request(APPLICATION_JSON_TYPE)
+                .put(Entity.json(new EventId(eventId)));
         return response.getStatusInfo();
     }
 
@@ -93,10 +107,10 @@ public class DistributedCounterClient {
      */
     public List<EventCount> list(Integer from,
                                  Integer to) {
-        return client.target(uri).path("/list")
+        return client.target(uri).path("/counters")
                 .queryParam("from", from)
                 .queryParam("to", to)
-                .request(MediaType.APPLICATION_JSON_TYPE)
+                .request(APPLICATION_JSON_TYPE)
                 .get(LIST_OF_EVENT_COUNT_STRING_TYPE);
     }
 
@@ -105,7 +119,7 @@ public class DistributedCounterClient {
      */
     public int listSize() {
         return client.target(uri).path("/listsize")
-                .request(MediaType.APPLICATION_JSON_TYPE)
+                .request(APPLICATION_JSON_TYPE)
                 .get(Integer.class);
     }
 

@@ -10,6 +10,7 @@ import javax.inject.Singleton;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -40,7 +41,7 @@ public class CounterResource {
     }
 
     @GET
-    @Path("/getcount")
+    @Path("/count")
     @Produces(MediaType.APPLICATION_JSON)
     public EventCount getCount(@NotEmpty(message = "Parameter 'event_id' is mandatory")
                                @QueryParam("event_id") final String eventId) {
@@ -49,7 +50,7 @@ public class CounterResource {
 
 
     @GET
-    @Path("/list")
+    @Path("/counters")
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventCount> listAllCounters(@QueryParam("from") Integer from,
                                             @QueryParam("to") Integer to) {
@@ -71,6 +72,7 @@ public class CounterResource {
     public Integer getSize() {
         return counterManager.getSize();
     }
+
 
 }
 
