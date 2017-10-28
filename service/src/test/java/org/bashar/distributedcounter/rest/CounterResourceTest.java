@@ -28,6 +28,7 @@ import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -102,7 +103,7 @@ public class CounterResourceTest extends JerseyTest {
         when(counterManager.getCount(anyString())).thenThrow(new IllegalArgumentException());
         Response response =  target("counter/count").queryParam("event_id", "user1")
                 .request(APPLICATION_JSON_TYPE).get();
-        assertEquals(BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(METHOD_NOT_ALLOWED.getStatusCode(), response.getStatus());
         assertEquals(APPLICATION_JSON_TYPE, response.getMediaType());
     }
 
