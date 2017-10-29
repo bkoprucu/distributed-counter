@@ -12,21 +12,22 @@ import java.util.List;
  */
 public class HazelcastConfig {
 
-
     private static final String GROUP_NAME = "DistributedCounter_Group";
     private static final String GROUP_PASSWORD = "DistributedCounter";
-    static final String HAZELCAST_INSTANCE_NAME = "DistributedCounter_Instance";
+    private static final String INSTANCE_NAME = "DistributedCounter_Instance";
 
 
     public static Config getConfig(int port, List<String> members) {
-        return getConfig(HAZELCAST_INSTANCE_NAME, port, members);
+        return getConfig(INSTANCE_NAME, port, members);
     }
 
     public static Config getConfig(String instanceName, int port, List<String> members) {
+        final int processors = Runtime.getRuntime().availableProcessors();
         final Config config = new Config(instanceName);
-        config.setProperty("hazelcast.logging.type", "slf4j");
         config.getGroupConfig().setName(GROUP_NAME).setPassword(GROUP_PASSWORD);
-
+        config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
+        config.setProperty("hazelcast.logging.type", "slf4j");
+        config.getExecutorConfig("exec").setPoolSize(processors * 2).setQueueCapacity(Integer.MAX_VALUE);
         // Discovery and members. Static for simplicity
         final NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setPort(port).setPortAutoIncrement(true);
@@ -36,4 +37,3 @@ public class HazelcastConfig {
     }
 
 }
-

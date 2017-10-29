@@ -86,7 +86,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>3.8.6</version>
+            <version>3.9</version>
         </dependency>
 
         <dependency>
@@ -95,12 +95,16 @@
             <version>2.1.0</version>
         </dependency>
 
-
-        <!-- TODO configure logback -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.25</version>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -165,7 +169,5 @@
             </plugin>
 
         </plugins>
-
     </build>
-
 </project>
