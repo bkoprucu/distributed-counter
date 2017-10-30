@@ -1,11 +1,9 @@
 package org.bashar.distributedcounter.counter;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;

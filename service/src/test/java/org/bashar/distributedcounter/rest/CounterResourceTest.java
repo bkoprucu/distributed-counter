@@ -4,8 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import org.bashar.distributedcounter.api.EventCount;
 import org.bashar.distributedcounter.api.EventId;
 import org.bashar.distributedcounter.counter.CounterManager;
-import org.bashar.distributedcounter.rest.CounterResource;
-import org.bashar.distributedcounter.rest.CustomExceptionMapper;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -18,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import javax.annotation.Resource;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.GenericType;
@@ -27,7 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;

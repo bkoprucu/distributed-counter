@@ -173,7 +173,8 @@ public class DistributedCounterApacheClient implements Closeable {
         } catch (IOException | URISyntaxException ex) {
             throw new CounterClientException(ex);
         } finally {
-            request.releaseConnection();
+            if(request != null)
+                request.releaseConnection();
         }
     }
 
@@ -200,7 +201,8 @@ public class DistributedCounterApacheClient implements Closeable {
         } catch (IOException | URISyntaxException ex) {
             throw new CounterClientException(ex);
         } finally {
-            request.releaseConnection();
+            if (request != null)
+                request.releaseConnection();
         }
     }
 

@@ -75,7 +75,7 @@ public class DistributedCounterClientTest {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         long start = System.currentTimeMillis();
         IntStream.range(0, threads).forEach(threadId ->
-                executor.submit(() -> IntStream.range(0, events).forEach(eventNo -> client.increment(prefix + threadId)))
+                executor.submit(() -> IntStream.range(0, events).forEach(eventNo -> client.increment(prefix + '_' + threadId)))
         );
         executor.shutdown();
         executor.awaitTermination(30, SECONDS);
@@ -84,7 +84,7 @@ public class DistributedCounterClientTest {
 
 
     private static String generateEventIdPrefix() {
-        return "_test_" + DistributedCounterClientTest.class.getSimpleName() + System.nanoTime();
+        return "_test_" + System.nanoTime();
     }
 
     @After

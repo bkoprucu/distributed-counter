@@ -3,7 +3,6 @@ package org.bashar.distributedcounter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import org.bashar.distributedcounter.counter.CounterManager;
-import org.bashar.distributedcounter.counter.PeriodicDistributingCounterManager;
 import org.bashar.distributedcounter.rest.CounterResource;
 import org.bashar.distributedcounter.rest.CustomExceptionMapper;
 import org.eclipse.jetty.server.Server;
@@ -22,7 +21,6 @@ public class Application {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     public static void main(String[] args) {
-
 
         final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
                         HazelcastConfig.getConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));

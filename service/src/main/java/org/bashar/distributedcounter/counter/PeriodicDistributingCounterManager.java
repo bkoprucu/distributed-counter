@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -105,15 +106,18 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
      */
      void sync() {
         if(syncInProgress.compareAndSet(false, true)) {
-            log.debug("sync() initiated");
-            localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
-                final AtomicLong atomicLong = entry.getValue();
-                final long count = atomicLong.get();
-                hazelcastIncrementer.increment(entry.getKey(), count);
-                atomicLong.addAndGet(-count);
-            });
-            log.debug("sync() completed");
-            syncInProgress.compareAndSet(true, false);
+            try {
+                log.debug("sync() initiated");
+                localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
+                    final AtomicLong atomicLong = entry.getValue();
+                    final long count = atomicLong.get();
+                    hazelcastIncrementer.increment(entry.getKey(), count);
+                    atomicLong.addAndGet(-count);
+                });
+                log.debug("sync() completed");
+            } finally {
+                syncInProgress.compareAndSet(true, false);
+            }
         }
     }
 
@@ -133,7 +137,7 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
                 // Local map should only have zero counts
                 final List<T> zeroKeys = localMap.entrySet().stream()
                         .filter(entry -> entry.getValue().get() == 0L)
-                        .map(entry -> entry.getKey())
+                        .map(Map.Entry::getKey)
                         .collect(Collectors.toList());
                 // Normally, all items should be 0
                 if (localMap.mappingCount() == zeroKeys.size()) {

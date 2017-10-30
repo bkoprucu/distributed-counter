@@ -21,12 +21,12 @@ public class HazelcastTest {
      * @param threads        Number of threads to run in parallel
      * @param eventCount     Number of events to send
      * @param eventIdPrefix  Evennt ids will be composed with eventIdPrefix + thread number
-     * @return
      */
     protected ExecutorService load(CounterManager counterManager, int threads, int eventCount, String eventIdPrefix) {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         IntStream.range(0, threads).forEach(threadId -> {
-            executor.submit(() -> IntStream.range(0, eventCount).forEach(value -> counterManager.increment(eventIdPrefix + threadId)));
+            executor.submit(() -> IntStream.range(0, eventCount)
+                    .forEach(value -> counterManager.increment(eventIdPrefix + threadId)));
         });
         return executor;
     }

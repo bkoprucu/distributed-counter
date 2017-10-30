@@ -1,6 +1,7 @@
 package org.bashar.distributedcounter;
 
 
+import org.bashar.distributedcounter.counter.CounterManager;
 import org.bashar.distributedcounter.counter.HazelcastCounterManager;
 import org.bashar.distributedcounter.counter.PeriodicDistributingCounterManager;
 
@@ -20,7 +21,7 @@ public class Preferences {
      * HazelcastCounterManager.class : Counts directly on Hazelcast
      * PeriodicDistributingCounterManager.class: Better performing version, syncs counts periodically on Hazelcast
      * */
-    public static final Class COUNTER_MANAGER_CLASS = HazelcastCounterManager.class;
+    public static final Class<? extends CounterManager> COUNTER_MANAGER_CLASS = PeriodicDistributingCounterManager.class;
 
 
     public static final int SERVER_PORT = 8080;
@@ -30,9 +31,8 @@ public class Preferences {
 
 
     public static final List<String> HAZELCAST_MEMBERS = Collections.unmodifiableList(Arrays.asList(
-            // Put all the hosts in the hazelcast cluster here, i.e all the hosts the app has been deployed.
-            // Remove "localhost" entry
-            // AWS auto discovery possible but not configured yet
+            // Put all the nodes of cluster here
+            // AWS auto discovery is possible but not configured yet
             "localhost"
     ));
 
