@@ -18,10 +18,8 @@ class HazelcastIncrementer<T> {
     // EntryProcessor for incrementing one by one
     private final EntryProcessor<T, Long> singleIncrementer;
 
-
     HazelcastIncrementer(IMap<T, Long> distributedMap) {
         this.distributedMap = distributedMap;
-
         this.singleIncrementer = new AbstractEntryProcessor<T, Long>() {
             @Override
             public Object process(Map.Entry<T, Long> entry) {
@@ -31,18 +29,12 @@ class HazelcastIncrementer<T> {
     }
 
     void increment(T eventId) {
-        if(eventId == null) {
-            throw new IllegalArgumentException();
-        }
         if (distributedMap.putIfAbsent(eventId, 1L) != null) {
             distributedMap.executeOnKey(eventId, singleIncrementer);
         }
     }
 
     void increment(T eventId, long amount) {
-        if (eventId == null) {
-            throw new IllegalArgumentException();
-        }
         if (amount > 0L && distributedMap.putIfAbsent(eventId, amount) != null) {
             distributedMap.executeOnKey(eventId, new AbstractEntryProcessor<T, Long>() {
                 @Override
@@ -53,6 +45,4 @@ class HazelcastIncrementer<T> {
         }
     }
 
-
 }
-

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Service
 public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManager<T> {
 
-    private final Logger log = LoggerFactory.getLogger(PeriodicDistributingCounterManager.class);
+    private final Logger logger = LoggerFactory.getLogger(PeriodicDistributingCounterManager.class);
 
     // Delay between sync operations
     private final long syncInterval = Preferences.PERIODIC_COUNTER_SYNC_DELAY;
@@ -58,6 +58,7 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
 
     @PostConstruct
     void init() {
+        logger.info("Starting sync executor. Delay={} ms", syncInterval);
         scheduledExecutor.scheduleWithFixedDelay(this::sync,
                 syncInterval, syncInterval, TimeUnit.MILLISECONDS);
     }
@@ -68,15 +69,17 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
      */
     @PreDestroy
     void stop() {
+        logger.info("stop() initiated");
         lock.lock();
         try {
-            log.info("Shutting down. Disabling local counters");
+            logger.info("Shutting down. Disabling local counters");
             localCounterEnabled.set(false);
             scheduledExecutor.shutdown();
             sync();
         } finally {
             lock.unlock();
         }
+        logger.info("stop() complete");
     }
 
     @Override
@@ -107,17 +110,19 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
      void sync() {
         if(syncInProgress.compareAndSet(false, true)) {
             try {
-                log.debug("sync() initiated");
+                logger.debug("sync() initiated");
                 localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
                     final AtomicLong atomicLong = entry.getValue();
                     final long count = atomicLong.get();
                     hazelcastIncrementer.increment(entry.getKey(), count);
                     atomicLong.addAndGet(-count);
                 });
-                log.debug("sync() completed");
+                logger.debug("sync() completed");
             } finally {
                 syncInProgress.compareAndSet(true, false);
             }
+        } else {
+            logger.info("sync() skipped - alreeady in progress");
         }
     }
 
@@ -128,10 +133,15 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
      * we have to switch to counting on Hazelcast only mode, sync() and remove the items.
      *
      * This can be scheduled to execute one time per day or week
+     *
+     * @return Number of removed items from local map
+     *
      **/
     public int resetLocalMap() {
+        logger.info("resetLocalMap() called");
         if (lock.tryLock()) {
             try {
+                logger.info("resetLocalMap() initiated");
                 localCounterEnabled.compareAndSet(true, false);
                 sync();
                 // Local map should only have zero counts
@@ -142,16 +152,20 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
                 // Normally, all items should be 0
                 if (localMap.mappingCount() == zeroKeys.size()) {
                     localMap.clear();
+                    logger.info("resetLocalMap() removed all items ({}) from local map", zeroKeys.size());
                 } else { // If some items cannot be synced
                     zeroKeys.forEach(localMap::remove);
+                    logger.warn("resetLocalMap() removed {} items from local map, {} items remained.",
+                            zeroKeys.size(), localMap.mappingCount() - zeroKeys.size());
                 }
                 return zeroKeys.size();
             } finally {
                 lock.unlock();
                 localCounterEnabled.compareAndSet(false, true);
+                logger.info("resetLocalMap() completed");
             }
         } else {
-            log.warn("resetLocalMap() already in progress");
+            logger.info("resetLocalMap() is already in progress");
             return 0;
         }
     }
@@ -161,7 +175,7 @@ public class PeriodicDistributingCounterManager<T> extends HazelcastCounterManag
      */
     @Override
     public void clear() {
-        log.warn("clear(): Removing all data!");
+        logger.warn("clear(): Removing all data!");
         distributedMap.clear();
         localMap.clear();
     }

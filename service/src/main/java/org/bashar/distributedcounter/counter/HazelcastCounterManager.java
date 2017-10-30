@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +56,7 @@ public class HazelcastCounterManager<T> implements CounterManager<T> {
                         // Ugly, but IMap refuses to work with Collectors.collect()
                     }
                 });
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     @Override

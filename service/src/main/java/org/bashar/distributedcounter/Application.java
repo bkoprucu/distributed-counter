@@ -26,8 +26,9 @@ public class Application {
                         HazelcastConfig.getConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
 
         final ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
-        //config.packages("org.bashar.rest");
-        //config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+
+        logger.info("Selected CounterManager={}", Preferences.COUNTER_MANAGER_CLASS.getSimpleName());
+
         config.register(new AbstractBinder() {
             @Override
             protected void configure() {
