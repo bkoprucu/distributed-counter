@@ -12,7 +12,7 @@ REST microservice for counting events
   * Externalized configuration has not been implemented. So is service discovery.<br>
     If you want to configure hosts and ports, edit
     
-    [service/src/main/java/org/bashar/distributedcounter/Preferences.java](service/src/main/java/org/bashar/distributedcounter/Preferences.java)
+    [service/src/main/java/org/berk/distributedcounter/Preferences.java](service/src/main/java/org/berk/distributedcounter/Preferences.java)
     
     If you skip this step, service will run using port 8080 for http, 950x for Hazelcast.
         
@@ -57,7 +57,7 @@ REST microservice for counting events
   
    ```
    <dependency>
-      <groupId>org.bashar.distributedcounter</groupId>
+      <groupId>org.berk.distributedcounter</groupId>
       <artifactId>client</artifactId>
       <version>1.0-SNAPSHOT</version>
    </dependency>
@@ -65,13 +65,10 @@ REST microservice for counting events
   
   **Sample usage of the client and some performance tests are in:**
   
-  [integrationtest/src/test/java/org/bashar/distributedcounter/client/DistributedCounterClientTest.java](integrationtest/src/test/java/org/bashar/distributedcounter/client/DistributedCounterClientTest.java)
+  [integrationtest/src/test/java/org/berk/distributedcounter/client/DistributedCounterClientTest.java](integrationtest/src/test/java/org/berk/distributedcounter/client/DistributedCounterClientTest.java)
 
 
 ## Author
 
-* **Başar Köprücü** [bkoprucu](https://github.com/bkoprucu) - [linkedIn](https://www.linkedin.com/in/koprucu/)
+* **Berk Köprücü** [bkoprucu](https://github.com/bkoprucu) - [linkedIn](https://www.linkedin.com/in/koprucu/)
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details

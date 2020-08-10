@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>distributedcounter</artifactId>
-        <groupId>org.bashar.distributedcounter</groupId>
+        <groupId>org.berk.distributedcounter</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -12,13 +12,13 @@
     <artifactId>service</artifactId>
 
     <properties>
-        <jetty-server.version>9.4.7.v20170914</jetty-server.version>
-        <jersey.version>2.26</jersey.version>
+        <jetty-server.version>9.4.31.v20200723</jetty-server.version>
+        <jersey.version>2.31</jersey.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.bashar.distributedcounter</groupId>
+            <groupId>org.berk.distributedcounter</groupId>
             <artifactId>api</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -84,15 +84,22 @@
         </dependency>
 
         <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+
+
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>3.9</version>
+            <version>3.12.8</version>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
-            <version>2.1.0</version>
+            <version>3.2</version>
         </dependency>
 
         <dependency>
@@ -122,7 +129,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.2.4</version>
                 <configuration>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <filters>
@@ -146,7 +153,7 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.bashar.distributedcounter.Application</mainClass>
+                                    <mainClass>org.berk.distributedcounter.Application</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
