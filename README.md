@@ -32,7 +32,7 @@ REST microservice for counting events
   
   Event identified with "Event1"
   ```
-  $ curl -w "\n" -X PUT http://localhost:8080/counter/increment -H "Content-Type: application/json" -d '{"id":"Event1"}'
+  $ curl -w "\n" -X PUT http://localhost:8080/counter/increment/event1 -H "Content-Type: application/json" -d '{"id":"Event1"}'
   $ _
   ```
   #### Get the count of an event

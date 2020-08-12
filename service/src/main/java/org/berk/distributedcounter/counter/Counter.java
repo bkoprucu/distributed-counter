@@ -11,17 +11,19 @@ import java.util.List;
 @Contract
 public interface Counter<T> {
 
-    void increment(T counterId);
+    void increment(T eventId);
+
+    void increment(T eventId, long amount);
 
     long getCount(T eventId);
 
     /**
      * List the login counters
-     * @param from First index. null will be considered as 0 (beginning)
-     * @param to End index for paging. null to getCount all items
+     * @param fromIndex First index. null or negative values will be considered as 0 (beginning)
+     * @param itemCount How many items to list, null will
      * @return Map containing counters
      */
-    List<EventCount> listAllCounters(Integer from, Integer to);
+    List<EventCount> listCounters(Integer fromIndex, Integer itemCount);
 
     /**
      * Returns total number of counters

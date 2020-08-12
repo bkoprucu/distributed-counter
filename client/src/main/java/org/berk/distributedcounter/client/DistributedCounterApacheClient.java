@@ -3,7 +3,6 @@ package org.berk.distributedcounter.client;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
@@ -13,22 +12,18 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.*;
-import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.berk.distributedcounter.api.EventCount;
-import org.berk.distributedcounter.api.EventId;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class DistributedCounterApacheClient implements Closeable {
@@ -37,12 +32,10 @@ public class DistributedCounterApacheClient implements Closeable {
     private final CloseableHttpClient httpClient;
 
     private final URI uri;
-    private final URI incrementUri; // re-using for performance
 
     private final ObjectMapper mapper;
     private final ObjectReader countReader;
     private final ObjectReader listReader;
-    private final ObjectWriter eventIdWriter;
 
     private static final String URI_FORMAT = "http://%s:%d/counter";
 
@@ -52,14 +45,12 @@ public class DistributedCounterApacheClient implements Closeable {
         this.httpClient = httpClient;
         try {
             this.uri = new URI(String.format(URI_FORMAT, host, port));
-            this.incrementUri = new URIBuilder(uri).setPath(uri.getPath() + "/increment").build();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
         mapper = new ObjectMapper();
         countReader = mapper.readerFor(EventCount.class);
         listReader = mapper.readerFor(new TypeReference<List<EventCount>>() {}); // we avoid generating TypeRef and reader
-        eventIdWriter = mapper.writerFor(EventId.class);
     }
 
     public static DistributedCounterApacheClient newClient(String host, int port, int connectTimeout, int requestTimeout, int threadPoolSize) {
@@ -90,6 +81,22 @@ public class DistributedCounterApacheClient implements Closeable {
     }
 
 
+    private URI buildURI(List<String> pathSegments, List<NameValuePair> queryParams) {
+        try {
+            URIBuilder builder = new URIBuilder(uri);
+            if(pathSegments != null) {
+                builder.setPathSegments(pathSegments);
+            }
+            if(! (queryParams == null || queryParams.isEmpty())) {
+                builder.setParameters(queryParams);
+            }
+            return builder.build();
+        } catch (URISyntaxException e) {
+            throw new CounterClientException(e);
+        }
+    }
+
+
     /**
      * Get count of event identified with eventId
      */
@@ -97,7 +104,6 @@ public class DistributedCounterApacheClient implements Closeable {
         if(isBlank(eventId)) {
             throw new IllegalArgumentException("eventId is mandatory");
         }
-
         HttpGet httpGet = new HttpGet(
                 buildURI(List.of("count"), List.of(new BasicNameValuePair("event_id", eventId))));
 
@@ -115,67 +121,50 @@ public class DistributedCounterApacheClient implements Closeable {
     }
 
 
-    private URI buildURI(List<String> pathSegments, List<NameValuePair> nvps) {
-        try {
-            return new URIBuilder(uri).setPathSegments(pathSegments).setParameters(nvps).build();
-        } catch (URISyntaxException e) {
-            throw new CounterClientException(e);
-        }
 
-    }
 
     /**
      * Increment counter identified by eventId by one
      */
+
     public void increment(String eventId)  {
+        increment(eventId, 0L);
+    }
+
+    public void increment(String eventId, Long amount)  {
         if (isBlank(eventId)) {
             throw new IllegalArgumentException("eventId is mandatory");
         }
-        HttpPut request = new HttpPut(incrementUri);
+        HttpPut request = new HttpPut(buildURI(
+                List.of("increment", "eventId"),
+                amount == null || amount == 0 ? null
+                                              : List.of(new BasicNameValuePair("amount", amount.toString()))));
         request.setHeader(APPLICATION_JSON_CONTENT_TYPE_HEADER);
-        CloseableHttpResponse response = null;
-        try {
-            request.setEntity(new ByteArrayEntity(eventIdWriter.writeValueAsBytes(new EventId(eventId)), ContentType.APPLICATION_JSON));
-            response = httpClient.execute(request);
+        try (CloseableHttpResponse response = httpClient.execute(request)){
             if (response.getCode() != HttpStatus.SC_OK) {
                 throw new CounterClientException(response.getReasonPhrase());
             }
         } catch (IOException ex) {
             throw new CounterClientException(ex);
-        } finally {
-            if(response != null) {
-                try {
-                    response.close();
-                } catch (IOException ignore) {
-                }
-            }
         }
     }
+
 
 
     /**
      * List all the event counters from index 'from' until index 'to'
      * @param from Optional. Considered first element if omitted
-     * @param to Optional, if omittted all the items beginning from 'from' will be listed
+     * @param to Optional, if omitted all the items beginning from 'from' will be listed
      * @return List of #EventCount objects indicating the Event ids with their counts
      */
 
 
     public List<EventCount> getCounters(Integer from, Integer to) {
-        URI getcountersUri;
-        try {
-            URIBuilder uriBuilder = new URIBuilder().setPath(uri.getPath().concat("/counters"));
-            if (from != null) {
-                uriBuilder.addParameter("from", from.toString());
-            }
-            if (to != null) {
-                uriBuilder.addParameter("to", to.toString());
-            }
-            getcountersUri = uriBuilder.build();
-        } catch (URISyntaxException e) {
-            throw  new CounterClientException(e);
-        }
-        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(getcountersUri))) {
+        List<NameValuePair> queryParams = new ArrayList<>(2);
+        Optional.ofNullable(from).map(fr -> queryParams.add(new BasicNameValuePair("from", from.toString())));
+        Optional.ofNullable(to).map(fr -> queryParams.add(new BasicNameValuePair("to", to.toString())));
+
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(buildURI(List.of("list"), queryParams)))) {
             if (response.getCode() != HttpStatus.SC_OK) {
                 throw new CounterClientException(response.getReasonPhrase());
             }
@@ -213,7 +202,6 @@ public class DistributedCounterApacheClient implements Closeable {
 
     /**
      * Closes only if not initialized by already existing CloseableHttpClient
-     * @throws IOException
      */
     @Override
     public void close() throws IOException {

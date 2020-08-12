@@ -83,15 +83,15 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     }
 
     @Override
-    public void increment(T counterId) {
+    public void increment(T eventId) {
         if (localCounterEnabled.get()) {
             // If there is no counter in the map, put 1 and return
-            final AtomicLong cnt = localMap.putIfAbsent(counterId, new AtomicLong(1L));
+            final AtomicLong cnt = localMap.putIfAbsent(eventId, new AtomicLong(1L));
             if (cnt != null) {
                 cnt.incrementAndGet();
             }
         } else {
-            super.increment(counterId);
+            super.increment(eventId);
         }
     }
 
@@ -122,7 +122,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
                 syncInProgress.compareAndSet(true, false);
             }
         } else {
-            logger.info("sync() skipped - alreeady in progress");
+            logger.info("sync() skipped - already in progress");
         }
     }
 

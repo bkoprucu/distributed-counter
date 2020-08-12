@@ -8,10 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Counters on distributed Hazelcast Map
@@ -22,6 +21,8 @@ public class HazelcastCounter<T> implements Counter<T> {
     private final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
 
     public static final String DISTRIBUTED_MAP_NAME = HazelcastCounter.class.getSimpleName().concat("Map");
+    public static final int MAX_ITEMS_PER_PAGE = 100_000;
+
 
     protected final IMap<T, Long> distributedMap;
     protected final HazelcastIncrementer<T> hazelcastIncrementer;
@@ -33,8 +34,13 @@ public class HazelcastCounter<T> implements Counter<T> {
     }
 
     @Override
-    public void increment(T counterId) {
-        hazelcastIncrementer.increment(counterId);
+    public void increment(T eventId) {
+        hazelcastIncrementer.increment(eventId);
+    }
+
+    @Override
+    public void increment(T eventId, long amount) {
+        hazelcastIncrementer.increment(eventId, amount);
     }
 
     @Override
@@ -43,20 +49,15 @@ public class HazelcastCounter<T> implements Counter<T> {
     }
 
     @Override
-    public List<EventCount> listAllCounters(Integer from, Integer to) {
-        //TODO improve this implementation, also not sorted: buggy
-        final AtomicInteger toAtomic = to == null ? null : new AtomicInteger(to);
-        final LinkedList<EventCount> result = new LinkedList<>();
-        distributedMap.entrySet().stream()
-                .skip(from == null ? 0 : from)
-                .forEach(entry -> {
-                    if(toAtomic == null || toAtomic.getAndDecrement()>0) {
-                        // TODO toString?
-                        result.add(new EventCount(entry.getKey().toString(), entry.getValue()));
-                        // Ugly, but IMap refuses to work with Collectors.collect()
-                    }
-                });
-        return Collections.unmodifiableList(result);
+    public List<EventCount> listCounters(Integer fromIndex, Integer itemCount) {
+        long skip = Optional.ofNullable(fromIndex).filter(fr -> fr > 0).orElse(0); // If from is negative or null, take 0
+        long listSize = Optional.ofNullable(itemCount).orElse(MAX_ITEMS_PER_PAGE);
+
+        return distributedMap.entrySet().stream()
+                .skip(skip)
+                .limit(listSize)
+                .map(entry -> new EventCount(entry.getKey().toString(), entry.getValue()))
+                .collect(Collectors.toList());
     }
 
     @Override

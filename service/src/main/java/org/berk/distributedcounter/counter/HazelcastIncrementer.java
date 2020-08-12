@@ -5,6 +5,7 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryProcessor;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Atomic increment operations on Hazelcast IMap
@@ -23,26 +24,26 @@ class HazelcastIncrementer<T> {
         this.singleIncrementer = new AbstractEntryProcessor<>() {
             @Override
             public Object process(Map.Entry<T, Long> entry) {
-                return entry.setValue(entry.getValue() + 1L);
+                return Optional.ofNullable(entry.getValue())
+                               .map(v -> entry.setValue(v + 1))
+                               .orElseGet(() -> entry.setValue(1L));
             }
         };
     }
 
     void increment(T eventId) {
-        if (distributedMap.putIfAbsent(eventId, 1L) != null) {
-            distributedMap.executeOnKey(eventId, singleIncrementer);
-        }
+        distributedMap.executeOnKey(eventId, singleIncrementer);
     }
 
     void increment(T eventId, long amount) {
-        if (amount > 0L && distributedMap.putIfAbsent(eventId, amount) != null) {
             distributedMap.executeOnKey(eventId, new AbstractEntryProcessor<T, Long>() {
                 @Override
                 public Object process(Map.Entry<T, Long> entry) {
-                    return entry.setValue(entry.getValue() + amount);
+                    return Optional.ofNullable(entry.getValue())
+                            .map(v -> entry.setValue(v + amount))
+                            .orElseGet(() -> entry.setValue(amount));
                 }
             });
-        }
     }
 
 }

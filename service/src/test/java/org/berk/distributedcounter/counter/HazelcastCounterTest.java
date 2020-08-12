@@ -1,13 +1,18 @@
 package org.berk.distributedcounter.counter;
 
+import org.berk.distributedcounter.api.EventCount;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class HazelcastCounterTest extends HazelcastTest {
     protected final HazelcastCounter<String> counterManager =
@@ -46,9 +51,42 @@ public class HazelcastCounterTest extends HazelcastTest {
         assertEquals(10, counterManager.getSize() - before);
     }
 
-    // @Test
+
+    @Test
+    public void should_list_counters() {
+        counterManager.clear();
+        assertEquals(0, counterManager.getSize());
+
+        int counterSize = 10;
+        List<EventCount> expectedEventCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
+            counterManager.increment("counter_" + value);
+            return new EventCount("counter_" + value, 1L);
+        }).collect(Collectors.toList());
+
+        List<EventCount> eventCounts = counterManager.listCounters(null, null);
+
+        assertTrue(expectedEventCounts.containsAll(eventCounts));
+        assertEquals(counterSize, eventCounts.size());
+
+        // Test pagination
+        List<EventCount> eventCountsPage1 = counterManager.listCounters(null, 4);
+        List<EventCount> eventCountsPage2 = counterManager.listCounters(4, 4);
+        List<EventCount> eventCountsPage3 = counterManager.listCounters(8, 4);
+        assertEquals(4, eventCountsPage1.size());
+        assertEquals(4, eventCountsPage2.size());
+        assertEquals(2, eventCountsPage3.size());
+        List<EventCount> allPages = new ArrayList<>(eventCountsPage1);
+        allPages.addAll(eventCountsPage2);
+        allPages.addAll(eventCountsPage3);
+        assertTrue(expectedEventCounts.containsAll(allPages));
+        assertEquals(counterSize, allPages.size());
+
+    }
+
+    @Test
     public void shouldClear() {
         counterManager.increment(UUID.randomUUID().toString());
+        assertNotEquals(0, counterManager.getSize());
         counterManager.clear();
         assertEquals(0, counterManager.getSize());
     }
