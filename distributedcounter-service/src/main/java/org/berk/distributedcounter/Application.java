@@ -1,7 +1,7 @@
 package org.berk.distributedcounter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.rest.CounterResource;
 import org.berk.distributedcounter.rest.CustomExceptionMapper;

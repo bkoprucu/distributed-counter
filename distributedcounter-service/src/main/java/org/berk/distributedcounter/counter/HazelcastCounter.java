@@ -1,7 +1,7 @@
 package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import org.berk.distributedcounter.api.EventCount;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;

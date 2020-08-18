@@ -23,7 +23,7 @@ public class HazelcastConfig {
     public static Config getConfig(String instanceName, int port, List<String> members) {
         final int processors = Runtime.getRuntime().availableProcessors();
         Config config = new Config(instanceName);
-        config.getGroupConfig().setName(GROUP_NAME);
+        config.setClusterName(GROUP_NAME);
         config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
         config.setProperty("hazelcast.logging.type", "slf4j");
         config.getExecutorConfig("exec").setPoolSize(processors * 2).setQueueCapacity(Integer.MAX_VALUE);

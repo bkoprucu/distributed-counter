@@ -93,14 +93,9 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>3.12.8</version>
+            <version>4.0.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-aws</artifactId>
-            <version>3.2</version>
-        </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>

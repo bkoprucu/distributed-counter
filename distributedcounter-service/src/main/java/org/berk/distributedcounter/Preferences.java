@@ -16,8 +16,8 @@ public class Preferences {
     /**
      * CounterManager implementation to use
      *
-     * HazelcastCounterManager.class : Counts directly on Hazelcast
-     * PeriodicDistributingCounterManager.class: Better performing version, syncs counts periodically on Hazelcast
+     * HazelcastCounter.class : Counts directly on Hazelcast
+     * PeriodicDistributingCounter.class: Better performing version, syncs counts periodically on Hazelcast
      * */
     public static final Class<? extends Counter> COUNTER_MANAGER_CLASS = PeriodicDistributingCounter.class;
 
@@ -35,7 +35,7 @@ public class Preferences {
     );
 
     // Delay between sync operations in PeriodicDistributingCounter
-    public static final int PERIODIC_COUNTER_SYNC_DELAY = 500;
+    public static final int PERIODIC_COUNTER_SYNC_INTERVAL = 500;
 
 }
 

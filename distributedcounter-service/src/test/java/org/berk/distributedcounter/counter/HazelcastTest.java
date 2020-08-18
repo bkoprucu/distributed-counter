@@ -1,7 +1,7 @@
 package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.berk.distributedcounter.HazelcastConfig;
 
 import java.util.Collections;

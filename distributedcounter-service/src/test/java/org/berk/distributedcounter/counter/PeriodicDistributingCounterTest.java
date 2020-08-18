@@ -43,7 +43,7 @@ public class PeriodicDistributingCounterTest extends HazelcastTest {
     @Test
     public void shouldHandleMultipleThreads() throws Exception {
         final int threads = 12;
-        final int eventCount = 250_0000;
+        final int eventCount = 250_000;
 
         String prefix = generateEventIdPrefix();
         ExecutorService executor = load(counterManager, threads, eventCount, prefix);

@@ -32,7 +32,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     private final Logger logger = LoggerFactory.getLogger(PeriodicDistributingCounter.class);
 
     // Delay between sync operations
-    private final long syncInterval = Preferences.PERIODIC_COUNTER_SYNC_DELAY;
+    private final long syncInterval = Preferences.PERIODIC_COUNTER_SYNC_INTERVAL;
 
     private final ConcurrentHashMap<T, AtomicLong> localMap;
     private final ScheduledExecutorService scheduledExecutor;
@@ -64,7 +64,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     }
 
     /**
-     * Prepares to shutdown by stopping usin g local counting, syncing the current counts to server,
+     * Prepares to shutdown by stopping using local counting, syncing the current counts to server,
      * and stopping sync scheduler
      */
     @PreDestroy

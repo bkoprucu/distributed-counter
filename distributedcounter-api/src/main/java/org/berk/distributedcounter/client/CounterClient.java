@@ -1,10 +1,10 @@
-package org.berk.distributedcounter.api.org.berk.distributedcounter.client;
+package org.berk.distributedcounter.client;
 
 import org.berk.distributedcounter.api.EventCount;
 
 import java.util.List;
 
-public interface DistributedCounterClient {
+public interface CounterClient {
     /** @return Value of the counter identified with counterId */
     long getCount(String counterId);
 
