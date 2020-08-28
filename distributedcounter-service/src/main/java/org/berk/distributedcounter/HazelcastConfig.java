@@ -1,6 +1,7 @@
 package org.berk.distributedcounter;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.List;
 
 /**
  * Hazelcast preferences.
- * TODO refactor, use external config
  */
 public class HazelcastConfig {
 
@@ -16,22 +16,21 @@ public class HazelcastConfig {
     private static final String INSTANCE_NAME = "DistributedCounter_Instance";
 
 
-    public static Config getConfig(int port, List<String> members) {
-        return getConfig(INSTANCE_NAME, port, members);
-    }
-
-    public static Config getConfig(String instanceName, int port, List<String> members) {
+    public static Config getConfig(boolean kubernetesEnabled) {
         final int processors = Runtime.getRuntime().availableProcessors();
-        Config config = new Config(instanceName);
+        Config config = new Config(INSTANCE_NAME);
         config.setClusterName(GROUP_NAME);
         config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
         config.setProperty("hazelcast.logging.type", "slf4j");
-        config.getExecutorConfig("exec").setPoolSize(processors * 2).setQueueCapacity(Integer.MAX_VALUE);
+        config.getExecutorConfig("exec").setPoolSize(processors).setQueueCapacity(Integer.MAX_VALUE);
         // Discovery and members. Static for simplicity
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        networkConfig.setPort(port).setPortAutoIncrement(true);
-        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
-        networkConfig.getJoin().getTcpIpConfig().setEnabled(true).setMembers(members);
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        if(kubernetesEnabled) {
+            joinConfig.getMulticastConfig().setEnabled(false);
+            joinConfig.getKubernetesConfig().setEnabled(true);
+        } else {
+            joinConfig.getMulticastConfig().setEnabled(true);
+        }
         return config;
     }
 

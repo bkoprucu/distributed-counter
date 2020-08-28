@@ -1,6 +1,6 @@
 package org.berk.distributedcounter.rest;
 
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 import org.berk.distributedcounter.counter.Counter;
 
 import javax.inject.Inject;
@@ -10,6 +10,7 @@ import javax.validation.constraints.Positive;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.UnknownHostException;
 import java.util.List;
 
 @Path("counter")
@@ -39,9 +40,9 @@ public class CounterResource {
 
     @GET
     @Path("/count/{id}")
-    public EventCount getCount(@NotEmpty(message = "Parameter 'id' is mandatory")
+    public Count getCount(@NotEmpty(message = "Parameter 'id' is mandatory")
                                @PathParam("id") final String eventId) {
-        return new EventCount(eventId, counter.getCount(eventId));
+        return new Count(eventId, counter.getCount(eventId));
     }
 
     @DELETE
@@ -53,8 +54,8 @@ public class CounterResource {
 
     @GET
     @Path("/list")
-    public List<EventCount> listCounters(@QueryParam("from_index") Integer fromIndex,
-                                         @QueryParam("item_count") @Positive Integer itemCount) {
+    public List<Count> listCounters(@QueryParam("from_index") Integer fromIndex,
+                                    @QueryParam("item_count") @Positive Integer itemCount) throws UnknownHostException {
         return counter.listCounters(fromIndex, itemCount);
     }
 

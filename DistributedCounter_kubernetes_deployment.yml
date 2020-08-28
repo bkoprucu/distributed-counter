@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: distributedcounter
+  name: distributedcounter
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: distributedcounter
+  template:
+    metadata:
+      labels:
+        app: distributedcounter
+    spec:
+      containers:
+      - image: bkoprucu/distributedcounter:jersey-1.0
+        imagePullPolicy: Always
+        name: distributedcounter
+        ports:
+          - containerPort: 8080
+        env:
+          - name: enableKubernetes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: distributedcounter
+  name: distributedcounter
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: distributedcounter
+  type: LoadBalancer

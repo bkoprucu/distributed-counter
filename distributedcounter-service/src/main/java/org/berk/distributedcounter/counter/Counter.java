@@ -1,6 +1,6 @@
 package org.berk.distributedcounter.counter;
 
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 import org.jvnet.hk2.annotations.Contract;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public interface Counter<T> {
      * @param itemCount How many items to list, null will
      * @return Map containing counters
      */
-    List<EventCount> listCounters(Integer fromIndex, Integer itemCount);
+    List<Count> listCounters(Integer fromIndex, Integer itemCount);
 
     /**
      * Returns total number of counters

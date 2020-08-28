@@ -2,7 +2,7 @@ package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,14 +49,14 @@ public class HazelcastCounter<T> implements Counter<T> {
     }
 
     @Override
-    public List<EventCount> listCounters(Integer fromIndex, Integer itemCount) {
+    public List<Count> listCounters(Integer fromIndex, Integer itemCount) {
         long skip = Optional.ofNullable(fromIndex).filter(fr -> fr > 0).orElse(0); // If from is negative or null, take 0
         long listSize = Optional.ofNullable(itemCount).orElse(MAX_ITEMS_PER_PAGE);
 
         return distributedMap.entrySet().stream()
                 .skip(skip)
                 .limit(listSize)
-                .map(entry -> new EventCount(entry.getKey().toString(), entry.getValue()))
+                .map(entry -> new Count(entry.getKey().toString(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 

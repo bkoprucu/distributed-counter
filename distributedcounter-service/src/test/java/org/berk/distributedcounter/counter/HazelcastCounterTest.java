@@ -1,6 +1,6 @@
 package org.berk.distributedcounter.counter;
 
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 import org.junit.Test;
 import org.junit.jupiter.api.Assumptions;
 
@@ -58,27 +58,27 @@ public class HazelcastCounterTest extends HazelcastTest {
         Assumptions.assumeTrue(counterManager.getSize() == 0);
 
         int counterSize = 10;
-        List<EventCount> expectedEventCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
+        List<Count> expectedCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
             counterManager.increment("counter_" + value);
-            return new EventCount("counter_" + value, 1L);
+            return new Count("counter_" + value, 1L);
         }).collect(Collectors.toList());
 
-        List<EventCount> eventCounts = counterManager.listCounters(null, null);
+        List<Count> counts = counterManager.listCounters(null, null);
 
-        assertTrue(expectedEventCounts.containsAll(eventCounts));
-        assertEquals(counterSize, eventCounts.size());
+        assertTrue(expectedCounts.containsAll(counts));
+        assertEquals(counterSize, counts.size());
 
         // Test pagination
-        List<EventCount> eventCountsPage1 = counterManager.listCounters(null, 4);
-        List<EventCount> eventCountsPage2 = counterManager.listCounters(4, 4);
-        List<EventCount> eventCountsPage3 = counterManager.listCounters(8, 4);
-        assertEquals(4, eventCountsPage1.size());
-        assertEquals(4, eventCountsPage2.size());
-        assertEquals(2, eventCountsPage3.size());
-        List<EventCount> allPages = new ArrayList<>(eventCountsPage1);
-        allPages.addAll(eventCountsPage2);
-        allPages.addAll(eventCountsPage3);
-        assertTrue(expectedEventCounts.containsAll(allPages));
+        List<Count> countsPage1 = counterManager.listCounters(null, 4);
+        List<Count> countsPage2 = counterManager.listCounters(4, 4);
+        List<Count> countsPage3 = counterManager.listCounters(8, 4);
+        assertEquals(4, countsPage1.size());
+        assertEquals(4, countsPage2.size());
+        assertEquals(2, countsPage3.size());
+        List<Count> allPages = new ArrayList<>(countsPage1);
+        allPages.addAll(countsPage2);
+        allPages.addAll(countsPage3);
+        assertTrue(expectedCounts.containsAll(allPages));
         assertEquals(counterSize, allPages.size());
 
     }

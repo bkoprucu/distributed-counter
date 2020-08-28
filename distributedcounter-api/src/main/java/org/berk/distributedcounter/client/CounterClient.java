@@ -1,6 +1,6 @@
 package org.berk.distributedcounter.client;
 
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 
 import java.util.List;
 
@@ -19,9 +19,9 @@ public interface CounterClient {
      * List counters
      * @param fromIndex  For pagination, index of the list to start from, can be null
      * @param itemCount  How many items to list, can be null to list max. items
-     * @return List of {@link EventCount }
+     * @return List of {@link Count }
      */
-    List<EventCount> getCounters(Integer fromIndex, Integer itemCount);
+    List<Count> getCounters(Integer fromIndex, Integer itemCount);
 
     /**
      * @return Total number of counters

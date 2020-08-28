@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 public class HazelcastTest {
 
     protected final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-            HazelcastConfig.getConfig("DistributedCounter_Test", 9300, Collections.singletonList("localhost")));
+            HazelcastConfig.getConfig(false));
 
     /**
      * Load the counter by sending lots of events

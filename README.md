@@ -18,32 +18,51 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
 **I have implemented this using Jersey, to play with  it. From this version onward I will move the implementation to Spring Boot.**   
 
 ## Prerequisites
-
+  To build:
   * Maven 3
   * JDK 11
   
-## Quick start
+  To run containers
+  * Docker
+  * Kubernetes
+    
+## Configuring and running
 
   * Externalized configuration and service discovery not implemented on this version. To configure nodes, edit [`Preferences`](distributedcounter-service/src/main/java/org/berk/distributedcounter/Preferences.java)
     
     If you skip this step, service will run using port 8080 for http, 950x for Hazelcast.
         
-  * Build using `mvn package`
-
-  * You may distribute fat jar `distributedcounter-service/target/distributedcounter-service-1.0-SNAPSHOT.jar` to other nodes    
+  * Build using `mvn clean install`
   
-  * Run the service
-    ```
-    $ java -jar service/target/service-1.0-SNAPSHOT.jar
-    ```
-      
-  * Or create the a Docker image and run it in a container:
-    ```
-    $ docker build -t counter:jersey distributedcounter-service/
-    $ docker run --name counter --rm -p 8080:8080 counter:jersey
-    ```
+  ##### Running the service locally:
+  ```
+  $ java -jar distributedcounter-service/target/distributedcounter-service-1.0-SNAPSHOT.jar
+  ```
 
-## Test the service  
+  ##### Running a cluster of (unmanaged) Docker containers
+    
+  Create a Docker bridge network to enable container to form a cluster:
+  ```
+  $ docker network create distributedcounter
+  ```
+  Run container instances, forming a cluster:
+  ```
+  $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:jersey-1.0
+  $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:jersey-1.0
+  ...
+  ```
+  
+  ##### Running a cluster using Kubernetes
+  Following will deploy a cluster of three pods, and a load balancer listening to port 8080:   
+  ```
+  $ kubectl apply -f DistributedCounter_kubernetes_deployment.yml
+  ```
+  Deployment progress can be monitored with:
+  ```
+  $ kubectl get pods -l app=distributedcounter -o wide --watch
+  ```
+  
+## Usage  
   #### Increment / add a counter named 'event1':
   ```
   $ curl -w "\n" -X PUT http://localhost:8080/counter/count/event1
@@ -79,8 +98,8 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   
   Sample usage of the client and some performance tests are in [`DistributedCounterClientTest`](distributedcounter-integrationtest/src/test/java/org/berk/distributedcounter/client/DistributedCounterClientTest.java)
 
+<br/>
+<br/>
 
-## Author
-
-* **Berk Köprücü** [bkoprucu](https://github.com/bkoprucu) - [https://www.linkedin.com/in/koprucu](https://www.linkedin.com/in/koprucu/)
+_Author: Berk Köprücü [https://github.com/bkoprucu](https://github.com/bkoprucu)   -   [https://www.linkedin.com/in/koprucu](https://www.linkedin.com/in/koprucu/)_
 

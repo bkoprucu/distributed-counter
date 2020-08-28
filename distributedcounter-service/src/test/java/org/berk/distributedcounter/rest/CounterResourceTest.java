@@ -1,7 +1,8 @@
 package org.berk.distributedcounter.rest;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.DistributedCounterApp;
+import org.berk.distributedcounter.api.Count;
 import org.berk.distributedcounter.counter.Counter;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
@@ -24,6 +25,7 @@ import java.util.List;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -38,14 +40,14 @@ public class CounterResourceTest extends JerseyTest {
     @Mock
     HazelcastInstance hazelcastInstance;
 
-    private static final GenericType<EventCount> EVENT_COUNT_STRING_TYPE = new GenericType<>(){};
-    private static final GenericType<List<EventCount>> LIST_OF_EVENT_COUNT_TYPE = new GenericType<>(){};
+    private static final GenericType<Count> EVENT_COUNT_STRING_TYPE = new GenericType<>(){};
+    private static final GenericType<List<Count>> LIST_OF_EVENT_COUNT_TYPE = new GenericType<>(){};
 
     @Override
     protected Application configure() {
-        ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
-        config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
-        config.register(new AbstractBinder() {
+        ResourceConfig resourceConfig = DistributedCounterApp.resourceConfig();
+        resourceConfig.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+        resourceConfig.register(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(hazelcastInstance).to(HazelcastInstance.class);
@@ -53,7 +55,7 @@ public class CounterResourceTest extends JerseyTest {
                 }.getType());
             }
         });
-        return config;
+        return resourceConfig;
     }
 
     @Test
@@ -66,16 +68,16 @@ public class CounterResourceTest extends JerseyTest {
     }
 
     @Test
-    public void getCount() {
+    public void get_count() {
         doReturn(5L).when(counter).getCount(eq("user1"));
-        EventCount eventCount =  target("counter/count/user1")
+        Count count =  target("counter/count/user1")
                 .request(APPLICATION_JSON_TYPE).get(EVENT_COUNT_STRING_TYPE);
-        assertEquals(new EventCount("user1", 5L), eventCount);
+        assertEquals(new Count("user1", 5L), count);
     }
 
 
     @Test
-    public void removeCounter() {
+    public void remove_counter() {
         Response response = target("counter/count/event1")
                 .request(APPLICATION_JSON_TYPE)
                 .delete();
@@ -84,7 +86,7 @@ public class CounterResourceTest extends JerseyTest {
     }
 
     @Test
-    public void getSize() {
+    public void get_list_size() {
         doReturn(3).when(counter).getSize();
         Integer size =  target("counter/listsize")
                 .request(APPLICATION_JSON_TYPE)
@@ -92,23 +94,33 @@ public class CounterResourceTest extends JerseyTest {
         assertEquals(3, size.intValue());
     }
 
+
     @Test
-    public void getCountersList() {
+    public void provide_host_header() {
+        doReturn(3).when(counter).getSize();
+        Response response =  target("counter/listsize")
+                .request(APPLICATION_JSON_TYPE)
+                .get();
+        assertNotNull(response.getHeaders().get("Host"));
+    }
+
+    @Test
+    public void get_counter_list() {
         when(counter.listCounters(null , null)).thenReturn(
-                List.of(new EventCount("user1", 1L),
-                        new EventCount("user2", 2L)));
-        List<EventCount> counters = target("counter/list")
+                List.of(new Count("user1", 1L),
+                        new Count("user2", 2L)));
+        List<Count> counters = target("counter/list")
                 .request(APPLICATION_JSON_TYPE).get(LIST_OF_EVENT_COUNT_TYPE);
         assertEquals(2, counters.size());
-        assertEquals(new EventCount("user1", 1L), counters.get(0));
-        assertEquals(new EventCount("user2", 2L), counters.get(1));
+        assertEquals(new Count("user1", 1L), counters.get(0));
+        assertEquals(new Count("user2", 2L), counters.get(1));
     }
 
     @Test
     public void getCountersList_should_reject_negative_item_count() {
         when(counter.listCounters(null , null)).thenReturn(
-                List.of(new EventCount("user1", 1L),
-                        new EventCount("user2", 2L)));
+                List.of(new Count("user1", 1L),
+                        new Count("user2", 2L)));
         Response response = target("counter/list")
                 .queryParam("from_index", 1)
                 .queryParam("item_count", -4)
@@ -118,7 +130,7 @@ public class CounterResourceTest extends JerseyTest {
     }
 
     @Test
-    public void errorHandling() {
+    public void handle_errors() {
         when(counter.getCount(anyString())).thenThrow(new IllegalArgumentException());
         Response response =  target("counter/count/user1")
                 .request(APPLICATION_JSON_TYPE).get();
@@ -126,5 +138,4 @@ public class CounterResourceTest extends JerseyTest {
         assertEquals(APPLICATION_JSON_TYPE, response.getMediaType());
     }
 
-    //TODO other cases
 }

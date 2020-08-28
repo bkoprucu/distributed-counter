@@ -16,7 +16,7 @@ import org.apache.hc.core5.http.*;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Timeout;
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -48,8 +48,8 @@ public class CounterApacheClient implements CounterClient, Closeable {
         this.baseUriStr = String.format("http://%s:%d/counter/", host, port);
         this.countUriStr = baseUriStr + "count/";
         mapper = new ObjectMapper();
-        countReader = mapper.readerFor(EventCount.class);
-        listReader = mapper.readerFor(new TypeReference<List<EventCount>>() {}); // we avoid generating TypeRef and reader
+        countReader = mapper.readerFor(Count.class);
+        listReader = mapper.readerFor(new TypeReference<List<Count>>() {}); // we avoid generating TypeRef and reader
     }
 
 
@@ -120,8 +120,8 @@ public class CounterApacheClient implements CounterClient, Closeable {
                 throw new CounterClientException(response.getReasonPhrase());
             }
             try (InputStream contentStream = response.getEntity().getContent()) {
-                EventCount eventCount = countReader.readValue(contentStream);
-                return eventCount.getCount();
+                Count count = countReader.readValue(contentStream);
+                return count.getCount();
             }
         } catch (IOException ex) {
             throw new CounterClientException(ex);
@@ -159,7 +159,7 @@ public class CounterApacheClient implements CounterClient, Closeable {
 
 
     @Override
-    public List<EventCount> getCounters(Integer fromIndex, Integer itemCount) {
+    public List<Count> getCounters(Integer fromIndex, Integer itemCount) {
         Map<String, Integer> queryParams = new HashMap<>();
         if(fromIndex != null) {
             queryParams.put("from_index", fromIndex);
@@ -178,7 +178,7 @@ public class CounterApacheClient implements CounterClient, Closeable {
     }
 
 
-    public List<EventCount> getCounters() {
+    public List<Count> getCounters() {
         return getCounters(null , null);
     }
 

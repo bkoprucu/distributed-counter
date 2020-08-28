@@ -1,7 +1,7 @@
 package org.berk.distributedcounter.client;
 
 import org.awaitility.Awaitility;
-import org.berk.distributedcounter.api.EventCount;
+import org.berk.distributedcounter.api.Count;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
@@ -55,7 +55,7 @@ public class CounterClientTest {
         eventIdList.forEach(client::increment);
 
         await().atMost(10, SECONDS).until(() -> count + beginWith == client.getListSize());
-        List<EventCount> countList = client.getCounters();
+        List<Count> countList = client.getCounters();
         assertEquals(count + beginWith, countList.size());
 
         if(beginWith == 0) {

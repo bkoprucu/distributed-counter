@@ -3,8 +3,6 @@ package org.berk.distributedcounter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.berk.distributedcounter.counter.Counter;
-import org.berk.distributedcounter.rest.CounterResource;
-import org.berk.distributedcounter.rest.CustomExceptionMapper;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -16,33 +14,32 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Application {
+import java.util.Optional;
 
-    private static final Logger logger = LoggerFactory.getLogger(Application.class);
+public class DistributedCounterApp {
+
+    private static final Logger logger = LoggerFactory.getLogger(DistributedCounterApp.class);
 
     public static void main(String[] args) {
 
-        final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                        HazelcastConfig.getConfig(Preferences.HAZELCAST_PORT, Preferences.HAZELCAST_MEMBERS));
+        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+                HazelcastConfig.getConfig(Optional.ofNullable(System.getProperty("enableKubernetes")).isPresent()));
 
-        final ResourceConfig config = new ResourceConfig(CounterResource.class, CustomExceptionMapper.class, JacksonFeature.class);
-
-        logger.info("Selected CounterManager={}", Preferences.COUNTER_MANAGER_CLASS.getSimpleName());
-
-        config.register(new AbstractBinder() {
+        ResourceConfig resourceConfig = resourceConfig().register(new AbstractBinder() {
             @Override
             protected void configure() {
                 bind(hazelcastInstance).to(HazelcastInstance.class);
-                bind(Preferences.COUNTER_MANAGER_CLASS).to(new TypeLiteral<Counter<String>>() {
-                }.getType());
+                bind(Preferences.COUNTER_CLASS).to(new TypeLiteral<Counter<String>>() {}.getType());
             }
         });
 
-        ServletHolder servlet = new ServletHolder(new ServletContainer(config));
+        ServletHolder servlet = new ServletHolder(new ServletContainer(resourceConfig));
         Server server = new Server(Preferences.SERVER_PORT);
         server.setStopAtShutdown(true);
         ServletContextHandler context = new ServletContextHandler(server, "/*");
         context.addServlet(servlet, "/*");
+
+        logger.info("Selected CounterManager={}", Preferences.COUNTER_CLASS.getSimpleName());
 
         try {
             server.start();
@@ -53,4 +50,12 @@ public class Application {
             server.destroy();
         }
     }
+
+
+    public static ResourceConfig resourceConfig() {
+        ResourceConfig resourceConfig = new ResourceConfig(JacksonFeature.class);
+        resourceConfig.packages("org.berk.distributedcounter.rest");
+        return resourceConfig;
+    }
+
 }

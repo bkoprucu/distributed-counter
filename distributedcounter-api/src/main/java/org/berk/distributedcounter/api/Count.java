@@ -7,16 +7,16 @@ import java.util.Objects;
 
 
 /**
- * Response with id of the event and counter value
+ * Response with id of the counter and its value
  */
-public class EventCount implements Comparable<EventCount>{
+public class Count implements Comparable<Count>{
 
     private final String id;
     private final Long count;
 
     @JsonCreator
-    public EventCount(@JsonProperty("id") String id,
-                      @JsonProperty("count") Long count) {
+    public Count(@JsonProperty("id") String id,
+                 @JsonProperty("count") Long count) {
         this.id = id;
         this.count = count;
     }
@@ -30,7 +30,7 @@ public class EventCount implements Comparable<EventCount>{
     }
 
     @Override
-    public int compareTo(EventCount o) {
+    public int compareTo(Count o) {
         return this.count.compareTo(o.count);
     }
 
@@ -38,7 +38,7 @@ public class EventCount implements Comparable<EventCount>{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        EventCount that = (EventCount) o;
+        Count that = (Count) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(count, that.count);
     }
