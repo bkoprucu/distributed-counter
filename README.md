@@ -15,14 +15,13 @@ Module [distributedcounter-api](distributedcounter-api) can be used to implement
 
 Project [distributedcounter-integrationtest](distributedcounter-integrationtest) Is a separate project, testing the service externally by using the client:  [`CounterClient`](distributedcounter-api/src/main/java/org/berk/distributedcounter/client/CounterClient.java)
 
-**I have implemented this using Jersey, to play with  it. From this version onward I will move the implementation to Spring Boot.**   
+**This has been started as a Jersey practice project; from this version on the implementation will be moved to Spring Boot**   
 
 ## Prerequisites
   To build:
-  * Maven 3
   * JDK 11
   
-  To run containers
+  To run containers:
   * Docker
   * Kubernetes
     
@@ -32,64 +31,65 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
     
     If you skip this step, service will run using port 8080 for http, 950x for Hazelcast.
         
-  * Build using `mvn clean install`
+  * Build using `mvn clean install` _(use_ `mvnw` _if Maven 3 is not present)_
   
-  ##### Running the service locally:
+  #### Running locally:
   ```
-  $ java -jar distributedcounter-service/target/distributedcounter-service-1.0-SNAPSHOT.jar
+  $ java -jar distributedcounter-service/target/distributedcounter-service-0.0.1-SNAPSHOT.jar
   ```
-
-  ##### Running a cluster of (unmanaged) Docker containers
-    
+  #### Running a cluster of (unmanaged) Docker containers  
   Create a Docker bridge network to enable container to form a cluster:
   ```
   $ docker network create distributedcounter
   ```
   Run container instances, forming a cluster:
   ```
-  $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:jersey-1.0
-  $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:jersey-1.0
+  $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:0.0.1-jersey
+  $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:0.0.1-jersey
   ...
   ```
-  
-  ##### Running a cluster using Kubernetes
+  #### Running a cluster using Kubernetes
   Following will deploy a cluster of three pods, and a load balancer listening to port 8080:   
   ```
-  $ kubectl apply -f DistributedCounter_kubernetes_deployment.yml
-  ```
-  Deployment progress can be monitored with:
-  ```
-  $ kubectl get pods -l app=distributedcounter -o wide --watch
+  $ kubectl apply -f Kubernetes_deployment.yml
   ```
   
 ## Usage  
   #### Increment / add a counter named 'event1':
   ```
-  $ curl -w "\n" -X PUT http://localhost:8080/counter/count/event1
+  $ curl -i -X PUT http://localhost:8080/counter/count/event1
+  HTTP/1.1 200 OK
+  Date: Sat, 19 Aug 2020 21:08:51 GMT
+  Host: distributedcounter-698954bf9d-7slj4
+  Content-Length: 0
+  Server: Jetty(9.4.31.v20200723)
   $ _
   ```
+  **"Host"** header shows the current host (or Kubernetes pod name or Docker container Id), which can be used to verify that load balancer is functional
+  
+  Increment by 5:
+  ```
+  $ curl -X PUT http://localhost:8080/counter/count/event1?amount=5
+  ```
+
   #### Get the count of a counter:
   ```
   $ curl -w "\n" http://localhost:8080/counter/count/event1
   {"id":"event1","count":6}
-  $ _
   ```
   #### Reset / remove counter:
   ```
   $ curl -w "\n" -X DELETE http://localhost:8080/counter/count/event1
-  $ _
   ```
   #### List counters:
   ```
   $ curl -w "\n" http://localhost:8080/counter/list
   [{"id":"Event4","count":1},{"id":"Test Id","count":1},{"id":"Event3","count":1},{"id":"Event1","count":6}]
-  $ _
   ```
-  Or with pagination arguments:
+  With pagination arguments:
   ```
   $ curl -w "\n" http://localhost:8080/counter/list?from_index=50&item_count=50
   [{"id":"Event4","count":1},{"id":"Test Id","count":1},{"id":"Event3","count":1},{"id":"Event1","count":6}]
-  $ _
   ```
   
 ## Using the client
@@ -98,7 +98,6 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   
   Sample usage of the client and some performance tests are in [`DistributedCounterClientTest`](distributedcounter-integrationtest/src/test/java/org/berk/distributedcounter/client/DistributedCounterClientTest.java)
 
-<br/>
 <br/>
 
 _Author: Berk Köprücü [https://github.com/bkoprucu](https://github.com/bkoprucu)   -   [https://www.linkedin.com/in/koprucu](https://www.linkedin.com/in/koprucu/)_
