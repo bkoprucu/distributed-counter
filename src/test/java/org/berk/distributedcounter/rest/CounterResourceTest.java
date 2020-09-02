@@ -3,150 +3,155 @@ package org.berk.distributedcounter.rest;
 import com.hazelcast.core.HazelcastInstance;
 import org.berk.distributedcounter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
-import org.glassfish.jersey.internal.inject.AbstractBinder;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
-import org.glassfish.jersey.test.JerseyTest;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Stream;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-public class CounterResourceTest extends JerseyTest {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class CounterResourceTest {
 
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule();
-
-    @Mock
+    @MockBean
     Counter counter;
+
+    @Autowired
+    private WebTestClient webTestClient;
 
     @Mock
     HazelcastInstance hazelcastInstance;
 
-    @Override
-    protected Application configure() {
-        ResourceConfig config = new ResourceConfig(CounterResource.class, JacksonFeature.class);
-        config.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
-        config.register(new AbstractBinder() {
-            @Override
-            protected void configure() {
-                bind(hazelcastInstance).to(HazelcastInstance.class);
-                bind(counter).to(Counter.class);
-            }
-        });
-        return config;
+    private final String eventId = "abc";
+    private final String nonExistingEventId = "non_existing";
+
+
+    @Test
+    public void shouldReturnHttpOkForIncrementingExistingCounter() {
+        when(counter.incrementAsync(eq(eventId), isNull(), isNull()))
+                .thenReturn(Mono.just(5L));
+        webTestClient.put()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}").build(eventId))
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectBody(Integer.class).isEqualTo(5);
+        verify(counter).incrementAsync(eventId, null, null);
     }
 
     @Test
-    public void shouldIncrementByOne() {
-        String eventId = "abc";
-        doReturn(5L).when(counter).increment(eq(eventId), any());
-        try (Response response = target("counter/count")
-                .path(eventId)
-                .request(APPLICATION_JSON_TYPE)
-                .put(Entity.entity("", APPLICATION_JSON_TYPE))) {
-            assertEquals(200, response.getStatus());
-            assertEquals("5", response.readEntity(String.class));
-        }
-        verify(counter).increment(eventId, null);
-    }
-
-    @Test
-    public void shouldReturnHttpCreatedForNonExistingCounter() {
-        String eventId = "abc";
-        String requestId = "testRequestId";
-        doReturn(null).when(counter).increment(eventId, requestId);
-        try (Response response = target("counter/count")
-                .path(eventId)
-                .queryParam("requestId", requestId)
-                .request(APPLICATION_JSON_TYPE)
-                .put(Entity.entity("", APPLICATION_JSON_TYPE))) {
-            assertEquals(201, response.getStatus());
-            assertEquals("", response.readEntity(String.class));
-        }
-        verify(counter).increment(eventId, requestId);
+    public void shouldReturnHttpCreatedForIncrementingNonExistingCounter() {
+        String requestId = "testRequestId1";
+        doReturn(Mono.empty())
+                .when(counter).incrementAsync(eventId, null, requestId);
+        webTestClient.put()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}")
+                                                  .queryParam("requestId", requestId)
+                                                  .build(eventId))
+                     .exchange()
+                     .expectStatus().isCreated()
+                     .expectBody().isEmpty();
+        verify(counter).incrementAsync(eventId, null, requestId);
     }
 
     @Test
     public void shouldIncrementByGivenAmount() {
-        String eventId = "abc";
-        String requestId = "testRequestId";
-        try (Response response = target("counter/count")
-                .path(eventId)
-                .queryParam("amount", "5")
-                .queryParam("requestId", requestId)
-                .request(APPLICATION_JSON_TYPE)
-                .put(Entity.entity("", APPLICATION_JSON_TYPE))) {
-            assertEquals(200, response.getStatus());
-        }
-        verify(counter).increment(eventId, 5, requestId);
+        String requestId = "testRequestId2";
+        doReturn(Mono.empty())
+                .when(counter).incrementAsync(eventId, 5, requestId);
+
+        webTestClient.put()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}")
+                                                  .queryParam("amount", "5")
+                                                  .queryParam("requestId", requestId)
+                                                  .build(eventId))
+                     .exchange()
+                     .expectStatus().isCreated()
+                     .expectBody().isEmpty();
+        verify(counter).incrementAsync(eventId, 5, requestId);
+    }
+
+
+    @Test
+    public void getCountShouldReturnCount() {
+        doReturn(Mono.just(5L))
+                .when(counter).getCountAsync(eventId);
+        webTestClient.get()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}").build(eventId))
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectBody(Integer.class).isEqualTo(5);
+        verify(counter).getCountAsync(eventId);
     }
 
     @Test
-    public void shouldGetCount() {
-        String eventId = "abc";
-        doReturn(5L)
-                .when(counter).getCount(eq(eventId));
-        long count = target("counter/count")
-                .path(eventId)
-                .request()
-                .get(Long.class);
-        assertEquals(5L, count);
-        verify(counter).getCount(eventId);
+    public void getCountShouldReturnHttp204ForNonExistingEventId() {
+        doReturn(Mono.empty())
+                .when(counter).getCountAsync(nonExistingEventId);
+        webTestClient.get()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}").build(nonExistingEventId))
+                     .exchange()
+                     .expectStatus().isNoContent()
+                     .expectBody().isEmpty();
+        verify(counter).getCountAsync(nonExistingEventId);
     }
 
 
     @Test
     public void shouldDeleteCounter() {
-        String eventId = "abc";
         String requestId = "testRequestId";
-        try(Response response = target("counter/count")
-                .path(eventId)
-                .queryParam("requestId", requestId)
-                .request()
-                .delete(Response.class)) {
-            assertEquals(200, response.getStatus());
-            verify(counter).remove(eventId, requestId);
-        }
+        webTestClient.delete()
+                     .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}")
+                                                  .queryParam("requestId", requestId)
+                                                  .build(eventId))
+
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectBody().isEmpty();
+        verify(counter).remove(eventId, requestId);
+
     }
 
     @Test
     public void shouldGetSize() {
-        doReturn(10L)
+        doReturn(Mono.just(10))
                 .when(counter).getSize();
-        long size = target("counter/size")
-                .request()
-                .get(Long.class);
-        assertEquals(10, size);
+        webTestClient.get()
+                     .uri(uriBuilder -> uriBuilder.path("counter/size").build())
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectBody(Integer.class).isEqualTo(10);
         verify(counter).getSize();
     }
 
     @Test
     public void shouldListCounters() {
-        List<EventCount> counts = Arrays.asList(new EventCount("first", 10L),
-                                                new EventCount("second", 20L));
-        doReturn(counts)
+        Stream<EventCount> counts = Stream.of(new EventCount("first", 10L),
+                                              new EventCount("second", 20L));
+        doReturn(Flux.fromStream(counts))
                 .when(counter).getCounts();
-        List<EventCount> list = target("counter/list")
-                .request()
-                .get(new GenericType<List<EventCount>>() { });
-        assertEquals(counts, list);
+        webTestClient.get()
+                     .uri("counter/list")
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                     .expectBody()
+                     .jsonPath("$.length()").isEqualTo(2)
+                     .jsonPath("$[0].id").isEqualTo("first")
+                     .jsonPath("$[0].count").isEqualTo("10")
+                     .jsonPath("$[1].id").isEqualTo("second")
+                     .jsonPath("$[1].count").isEqualTo("20");
+        verify(counter).getCounts();
     }
 
 }

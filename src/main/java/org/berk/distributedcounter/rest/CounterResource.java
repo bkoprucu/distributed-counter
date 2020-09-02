@@ -2,72 +2,62 @@ package org.berk.distributedcounter.rest;
 
 import org.berk.distributedcounter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
-
-import static javax.ws.rs.core.Response.Status.CREATED;
-import static javax.ws.rs.core.Response.Status.OK;
+import static org.springframework.http.HttpStatus.CREATED;
 
 
-@Path("counter")
-@Singleton
-@Produces(MediaType.APPLICATION_JSON)
+@RestController
+@RequestMapping(path = "counter", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CounterResource {
 
     private final Counter counter;
 
-    @Inject
     public CounterResource(Counter counter) {
         this.counter = counter;
     }
 
-    @PUT
-    @Path("/count/{eventId}")
-    public Response increment(@PathParam("eventId") String eventId,
-                              @QueryParam("amount") Integer amount,
-                              @QueryParam("requestId") String requestId) {
-        Long previous = amount == null ? counter.increment(eventId, requestId)
-                                       : counter.increment(eventId, amount, requestId);
-        return Response.status(previous == null ? CREATED
-                                                : OK)
-                       .entity(previous).build();
+    @PutMapping("/count/{eventId}")
+    public Mono<ResponseEntity<Long>> increment(@PathVariable("eventId") String eventId,
+                                                @RequestParam(name = "amount", required = false) Integer amount,
+                                                @RequestParam(name = "requestId", required = false) String requestId) {
+        return counter.incrementAsync(eventId, amount, requestId)
+                   .map(ResponseEntity::ok)
+                   .defaultIfEmpty(ResponseEntity.status(CREATED).build());
     }
 
 
-    @GET
-    @Path("/count/{eventId}")
-    public Long getCount(@PathParam("eventId") String eventId) {
-        return counter.getCount(eventId);
+    @GetMapping("/count/{eventId}")
+    public Mono<ResponseEntity<Long>> getCount(@PathVariable("eventId") String eventId) {
+        return counter.getCountAsync(eventId)
+                   .map(ResponseEntity::ok)
+                   .defaultIfEmpty(ResponseEntity.noContent().build());
     }
 
-    @DELETE
-    @Path("/count/{eventId}")
-    public Response deleteCount(@PathParam("eventId") String eventId,
-                                @QueryParam("requestId") String requestId) {
+    @DeleteMapping("/count/{eventId}")
+    public ResponseEntity<Void> deleteCount(@PathVariable("eventId") String eventId,
+                                            @RequestParam(name = "requestId") String requestId) {
         counter.remove(eventId, requestId);
-        return Response.ok().build();
+        return ResponseEntity.ok().build();
     }
 
-    @GET
-    @Path("/size")
-    public Long getSize() {
+    @GetMapping("/size")
+    public Mono<Integer> getSize() {
         return counter.getSize();
     }
 
-    @GET
-    @Path("/list")
-    public List<EventCount> getCounts() {
+    @GetMapping("/list")
+    public Flux<EventCount> listCounts() {
         return counter.getCounts();
     }
 

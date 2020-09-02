@@ -13,7 +13,7 @@ public class HazelcastConfig {
 
     private static Config baseConfig() {
         Config config = new Config(INSTANCE_NAME);
-        config.getGroupConfig().setName(GROUP_NAME);
+        config.setClusterName(GROUP_NAME);
         config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
         config.setProperty("hazelcast.logging.type", "slf4j");
         config.getExecutorConfig("DistributedCounter_Executor")

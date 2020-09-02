@@ -1,24 +1,21 @@
 package org.berk.distributedcounter.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import org.berk.distributedcounter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletionStage;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.berk.distributedcounter.AppConfig.DEDUPLICATION_MAP_TIMEOUT_MINS;
 
 public class HazelcastCounter implements Counter {
-
 
     private static final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
 
@@ -26,19 +23,15 @@ public class HazelcastCounter implements Counter {
     private final IMap<String, Long> distributedMap;
 
     // For idempotence / deduplication
-    private final IMap<String, Boolean> requestIdMap;
+    final IMap<String, Boolean> requestIdMap;
 
     // Re-usable EntryProcessor for incrementing by one
-    private final EntryProcessor<String, Long> incrementByOneProcessor = new AbstractEntryProcessor<String, Long>() {
-        @Override
-        public Object process(Map.Entry<String, Long> entry) {
-            return entry.setValue(entry.getValue() == null ? 1L
-                                                           : entry.getValue() + 1L);
-        }
-    };
+    private final EntryProcessor<String, Long, Long> incrementByOneProcessor =
+            entry -> entry.setValue(entry.getValue() == null
+                                    ? 1L
+                                    : entry.getValue() + 1L);
 
 
-    @Inject
     public HazelcastCounter(HazelcastInstance hazelcastInstance) {
         distributedMap = hazelcastInstance.getMap(getClass().getSimpleName().concat("Map"));
         requestIdMap = hazelcastInstance.getMap("RequestIdMap");
@@ -46,62 +39,62 @@ public class HazelcastCounter implements Counter {
 
 
     @Override
-    public Long increment(String eventId, String requestId) {
-        return increment(eventId, 1, requestId);
+    public Mono<Long> incrementAsync(String eventId, String requestId) {
+        return incrementAsync(eventId, 1, requestId);
     }
 
 
     @Override
-    public Long increment(String eventId, int amount, String requestId) {
-        if (amount == 0) {
-            return getCount(eventId);
+    public Mono<Long> incrementAsync(String eventId, Integer amount, String requestId) {
+        final int amnt = amount == null ? 1 : amount;
+        if (amnt == 0) {
+            return getCountAsync(eventId);
         }
 
         // Atomically check for requestId for deduplication / idempotency
         if (requestId == null || requestIdMap.putIfAbsent(requestId, true, DEDUPLICATION_MAP_TIMEOUT_MINS, MINUTES) == null) {
-            return (Long) distributedMap.executeOnKey(
-                    eventId, amount == 1 ? incrementByOneProcessor
-                                         : new AbstractEntryProcessor<String, Long>() {
-                        @Override
-                        public Object process(Map.Entry<String, Long> entry) {
-                            return entry.setValue(entry.getValue() == null ? amount
-                                                                           : entry.getValue() + amount);
-                        }
-                    });
+            CompletionStage<Long> completionStage =
+                distributedMap.submitToKey(eventId, amnt == 1
+                        ? incrementByOneProcessor
+                        : entry -> entry.setValue(entry.getValue() == null ? amnt
+                                                                           : entry.getValue() + amnt));
+
+            return Mono.fromCompletionStage(completionStage);
         }
         log.warn("Duplicate increment request for eventId: {}, requestId: {}", eventId, requestId);
-        return getCount(eventId);
+        return getCountAsync(eventId);
     }
 
 
     @Override
-    public Long getCount(String eventId) {
-        return distributedMap.get(eventId);
+    public Mono<Long> getCountAsync(String eventId) {
+        return Mono.fromCompletionStage(distributedMap.getAsync(eventId));
     }
 
     @Override
-    public long getSize() {
-        return distributedMap.size();
+    public Mono<Integer> getSize() {
+        return Mono.fromCallable(distributedMap::size);
     }
 
     @Override
-    public List<EventCount> getCounts() {
-        return distributedMap
+    public Flux<EventCount> getCounts() {
+        return Flux.fromStream(() ->distributedMap
                 .entrySet()
                 .stream()
-                .map(entry -> new EventCount(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .map(entry -> new EventCount(entry.getKey(), entry.getValue())));
     }
 
     @Override
     public void remove(String eventId, String requestId) {
-        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, 10, MINUTES) == null) {
+        // Atomically check for requestId for deduplication / idempotency
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, DEDUPLICATION_MAP_TIMEOUT_MINS, MINUTES) == null) {
             distributedMap.delete(eventId);
             log.info("Removed entry {}", eventId);
             return;
         }
         log.info("Duplicate remove request for eventId: {}.  with requestId: {}", eventId, requestId);
     }
+
 
     void clear() {
         log.info("clear() called, removing all counters");

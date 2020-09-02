@@ -1,8 +1,12 @@
 package org.berk.distributedcounter;
 
 import org.berk.distributedcounter.rest.api.EventCount;
+import org.springframework.lang.Nullable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public interface Counter {
 
@@ -12,17 +16,17 @@ public interface Counter {
      * @param requestId  Unique id for idempotency, can be null
      * @return Former value of the counter, or null if there wasn't a counter
      */
-    Long increment(String eventId, String requestId);
+    Mono<Long> incrementAsync(String eventId, String requestId);
 
 
     /**
      * Increment counter {@code eventId} by given {@code amount}
      * @param eventId    Counter to increment
-     * @param amount     Increment by how much
+     * @param amount     Increment by how much, can be null, defaults to 1
      * @param requestId  Unique id for idempotency, can be null
      * @return Former value of the counter, or null if there wasn't a counter
      */
-    Long increment(String eventId, int amount, String requestId);
+    Mono<Long> incrementAsync(String eventId, @Nullable Integer amount, @Nullable String requestId);
 
     /**
      * Remove counter {@code eventId}
@@ -31,9 +35,9 @@ public interface Counter {
      */
     void remove(String eventId, String requestId);
 
-    Long getCount(String eventId);
+    Mono<Long> getCountAsync(String eventId);
 
-    long getSize();
+    Mono<Integer> getSize();
 
-    List<EventCount> getCounts();
+    Flux<EventCount> getCounts();
 }
