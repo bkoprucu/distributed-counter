@@ -1,7 +1,7 @@
 package org.berk.distributedcounter.rest;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.berk.distributedcounter.Counter;
+import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

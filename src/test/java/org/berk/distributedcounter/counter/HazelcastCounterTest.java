@@ -1,4 +1,4 @@
-package org.berk.distributedcounter.hazelcast;
+package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -21,10 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class HazelcastCounterTest {
 
-    final HazelcastInstance hazelcastInstance =
-            HazelcastInstanceFactory.getOrCreateHazelcastInstance(HazelcastConfig.multicastDiscovery());
+    private final HazelcastInstance hazelcastInstance =
+            HazelcastInstanceFactory.getOrCreateHazelcastInstance(new HazelcastConfigBuilder("testCluster")
+                                                                          .withMulticastDiscovery()
+                                                                          .getConfig());
 
-    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance);
+    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance,
+                                                                  new HazelcastCounterProperties("testCluster", 10));
 
     private final String eventId = "testEventId";
     private final String nonExistingEventId = "nonExistingEventId";
@@ -118,15 +120,15 @@ public class HazelcastCounterTest {
 
     @Test
     public void shouldRemoveOnceForSameRequestId() throws ExecutionException, InterruptedException {
-        String requestId1 = UUID.randomUUID().toString();
+        String requestId = UUID.randomUUID().toString();
         counter.incrementAsync(eventId, 5, null).block();
         assertEquals(5L, counter.getCountAsync(eventId).block());
-        counter.remove(eventId, requestId1);
+        counter.remove(eventId, requestId);
         assertNull(counter.getCountAsync(eventId).block());
 
         counter.incrementAsync(eventId, 5, null).block();
         assertEquals(5L, counter.getCountAsync(eventId).block());
-        counter.remove(eventId, requestId1);
+        counter.remove(eventId, requestId); // Duplicate request, should be ignored
         assertEquals(5L, counter.getCountAsync(eventId).block());
     }
 

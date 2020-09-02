@@ -1,6 +1,6 @@
 package org.berk.distributedcounter.rest;
 
-import org.berk.distributedcounter.Counter;
+import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

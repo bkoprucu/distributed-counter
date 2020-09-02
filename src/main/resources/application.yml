@@ -13,3 +13,6 @@ server:
 
 logging.level:
   org.berk: DEBUG
+
+hazelcastcounter:
+  cluster-name: "counter-cluster"

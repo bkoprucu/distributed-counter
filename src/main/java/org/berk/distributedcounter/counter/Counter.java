@@ -1,4 +1,4 @@
-package org.berk.distributedcounter;
+package org.berk.distributedcounter.counter;
 
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.springframework.lang.Nullable;

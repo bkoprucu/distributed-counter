@@ -1,9 +1,8 @@
-package org.berk.distributedcounter.hazelcast;
+package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import org.berk.distributedcounter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,12 +11,13 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletionStage;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.berk.distributedcounter.AppConfig.DEDUPLICATION_MAP_TIMEOUT_MINS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HazelcastCounter implements Counter {
 
     private static final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
+
+    private final HazelcastCounterProperties counterProperties;
 
     // Keeping counters
     private final IMap<String, Long> distributedMap;
@@ -32,9 +32,10 @@ public class HazelcastCounter implements Counter {
                                     : entry.getValue() + 1L);
 
 
-    public HazelcastCounter(HazelcastInstance hazelcastInstance) {
-        distributedMap = hazelcastInstance.getMap(getClass().getSimpleName().concat("Map"));
-        requestIdMap = hazelcastInstance.getMap("RequestIdMap");
+    public HazelcastCounter(HazelcastInstance hazelcastInstance, HazelcastCounterProperties counterProperties) {
+        this.counterProperties = counterProperties;
+        this.distributedMap = hazelcastInstance.getMap(getClass().getSimpleName().concat("Map"));
+        this.requestIdMap = hazelcastInstance.getMap("RequestIdMap");
     }
 
 
@@ -52,7 +53,7 @@ public class HazelcastCounter implements Counter {
         }
 
         // Atomically check for requestId for deduplication / idempotency
-        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, DEDUPLICATION_MAP_TIMEOUT_MINS, MINUTES) == null) {
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
             CompletionStage<Long> completionStage =
                 distributedMap.submitToKey(eventId, amnt == 1
                         ? incrementByOneProcessor
@@ -87,7 +88,7 @@ public class HazelcastCounter implements Counter {
     @Override
     public void remove(String eventId, String requestId) {
         // Atomically check for requestId for deduplication / idempotency
-        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, DEDUPLICATION_MAP_TIMEOUT_MINS, MINUTES) == null) {
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
             distributedMap.delete(eventId);
             log.info("Removed entry {}", eventId);
             return;
