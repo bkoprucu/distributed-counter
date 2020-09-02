@@ -1,2 +1,2 @@
 #!/bin/sh
-docker image build -t brkoprucu/distributedcounter .
+docker image build -t bkoprucu/distributedcounter .
