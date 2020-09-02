@@ -5,7 +5,7 @@
     <parent>
         <artifactId>distributedcounter</artifactId>
         <groupId>org.berk.distributedcounter</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.berk.distributedcounter</groupId>
             <artifactId>distributedcounter-api</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
@@ -27,7 +27,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
 
     </dependencies>

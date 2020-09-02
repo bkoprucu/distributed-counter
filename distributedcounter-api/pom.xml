@@ -5,42 +5,33 @@
     <parent>
         <artifactId>distributedcounter</artifactId>
         <groupId>org.berk.distributedcounter</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>distributedcounter-api</artifactId>
 
-    <properties>
-        <jackson.version>2.10.1</jackson.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
-            <version>2.0.1.Final</version>
             <optional>true</optional>
         </dependency>
-
     </dependencies>
 
 </project>

@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  shutdown: GRACEFUL
+
+spring:
+  main:
+    cloud-platform: KUBERNETES
+
+counter:
+  PeriodicDistributingCounter:
+    enabled: true # Set false to use HazelcastCounter
+    syncInterval: 500   # Delay between sync operations in PeriodicDistributingCounter

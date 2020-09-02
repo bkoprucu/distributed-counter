@@ -1,18 +1,18 @@
 package org.berk.distributedcounter.counter;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import org.berk.distributedcounter.HazelcastConfig;
 
-import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 public class HazelcastTest {
 
-    protected final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-            HazelcastConfig.getConfig(false));
+
+    final Config config = new Config("test");
+    protected final HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
 
     /**
      * Load the counter by sending lots of events

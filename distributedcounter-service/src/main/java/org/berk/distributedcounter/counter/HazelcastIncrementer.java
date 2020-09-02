@@ -7,7 +7,7 @@ import java.util.Optional;
 
 /**
  * Atomic increment operations on Hazelcast IMap
- * Avoids locks by
+ * Avoids locks by using Hazelcast executor
  *
  * @param <T> Key of the Hazelcast IMap
  */

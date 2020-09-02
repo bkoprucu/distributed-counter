@@ -55,13 +55,13 @@ public class CounterClientTest {
         eventIdList.forEach(client::increment);
 
         await().atMost(10, SECONDS).until(() -> count + beginWith == client.getListSize());
-        List<Count> countList = client.getCounters();
+        List<Count<String>> countList = client.getCounters();
         assertEquals(count + beginWith, countList.size());
 
         if(beginWith == 0) {
             countList.forEach(eventCount -> {
                 assertTrue(eventIdList.contains(eventCount.getId()));
-                assertEquals(1L, eventCount.getCount().longValue());
+                assertEquals(1L, eventCount.getCountVal().longValue());
             });
         }
     }

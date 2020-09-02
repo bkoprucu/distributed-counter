@@ -17,6 +17,8 @@ import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.berk.distributedcounter.api.Count;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -43,23 +45,28 @@ public class CounterApacheClient implements CounterClient, Closeable {
     private final ObjectReader countReader;
     private final ObjectReader listReader;
 
+
+    private static final Logger log = LoggerFactory.getLogger(CounterApacheClient.class);
+
     private CounterApacheClient(String host, int port, CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
         this.baseUriStr = String.format("http://%s:%d/counter/", host, port);
         this.countUriStr = baseUriStr + "count/";
         mapper = new ObjectMapper();
         countReader = mapper.readerFor(Count.class);
-        listReader = mapper.readerFor(new TypeReference<List<Count>>() {}); // we avoid generating TypeRef and reader
+        listReader = mapper.readerFor(new TypeReference<List<Count<?>>>() {}); // we avoid generating TypeRef and reader
+        log.info("Logger initialized for baseUri:{}", baseUriStr);
     }
 
 
+    /** Create a client with pool and connection parameters. This will create the pool and ClosableHttpClient instance  */
     public static CounterApacheClient newClient(String host, int port, int connectTimeout, int requestTimeout, int threadPoolSize) {
         CounterApacheClient distributedCounterClient = newClient(host, port, httpClient(connectTimeout, requestTimeout, threadPoolSize));
         distributedCounterClient.sharedHttpClient = false;
         return distributedCounterClient;
     }
 
-
+    /** Create a client using a already existing HttpClient instance */
     public static CounterApacheClient newClient(String host, int port, CloseableHttpClient httpClient) {
         Objects.requireNonNull(httpClient);
         CounterApacheClient distributedCounterClient = new CounterApacheClient(host, port, httpClient);
@@ -69,6 +76,7 @@ public class CounterApacheClient implements CounterClient, Closeable {
 
 
     private static CloseableHttpClient httpClient(int connectTimeout, int requestTimeout, int threadPoolSize)  {
+        log.info("Creating HttpClient and thread pool");
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
         connManager.setMaxTotal(threadPoolSize);
         connManager.setDefaultMaxPerRoute(threadPoolSize);
@@ -120,8 +128,8 @@ public class CounterApacheClient implements CounterClient, Closeable {
                 throw new CounterClientException(response.getReasonPhrase());
             }
             try (InputStream contentStream = response.getEntity().getContent()) {
-                Count count = countReader.readValue(contentStream);
-                return count.getCount();
+                Count<?> count = countReader.readValue(contentStream);
+                return count.getCountVal();
             }
         } catch (IOException ex) {
             throw new CounterClientException(ex);
@@ -159,7 +167,7 @@ public class CounterApacheClient implements CounterClient, Closeable {
 
 
     @Override
-    public List<Count> getCounters(Integer fromIndex, Integer itemCount) {
+    public List<Count<String>> getCounters(Integer fromIndex, Integer itemCount) {
         Map<String, Integer> queryParams = new HashMap<>();
         if(fromIndex != null) {
             queryParams.put("from_index", fromIndex);
@@ -178,7 +186,7 @@ public class CounterApacheClient implements CounterClient, Closeable {
     }
 
 
-    public List<Count> getCounters() {
+    public List<Count<String>> getCounters() {
         return getCounters(null , null);
     }
 

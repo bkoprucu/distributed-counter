@@ -1,14 +1,11 @@
 package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.berk.distributedcounter.Preferences;
-import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,13 +23,12 @@ import java.util.stream.Collectors;
  * Counts the events on local ConcurrentHashMap using AtomicLong, and synchronizes to Hazelcast periodically.
  * This way it can perform better than HazelcastCounter, though the results will be delayed by syncInterval
  */
-@Service
 public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
 
-    private final Logger logger = LoggerFactory.getLogger(PeriodicDistributingCounter.class);
+    private final Logger log = LoggerFactory.getLogger(PeriodicDistributingCounter.class);
 
     // Delay between sync operations
-    private final long syncInterval = Preferences.PERIODIC_COUNTER_SYNC_INTERVAL;
+    private final long syncInterval;
 
     private final ConcurrentHashMap<T, AtomicLong> localMap;
     private final ScheduledExecutorService scheduledExecutor;
@@ -46,9 +42,9 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     // Sync status
     private final AtomicBoolean syncInProgress;
 
-    @Inject
-    public PeriodicDistributingCounter(HazelcastInstance hazelcastInstance) {
+    public PeriodicDistributingCounter(HazelcastInstance hazelcastInstance, long syncInterval) {
         super(hazelcastInstance);
+        this.syncInterval = syncInterval;
         localMap = new ConcurrentHashMap<>();
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
         localCounterEnabled = new AtomicBoolean(true);
@@ -58,7 +54,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
 
     @PostConstruct
     void init() {
-        logger.info("Starting sync executor. Delay={} ms", syncInterval);
+        log.info("Starting sync executor. Delay={} ms", syncInterval);
         scheduledExecutor.scheduleWithFixedDelay(this::sync,
                 syncInterval, syncInterval, TimeUnit.MILLISECONDS);
     }
@@ -69,17 +65,17 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
      */
     @PreDestroy
     void stop() {
-        logger.info("stop() initiated");
+        log.info("stop() initiated");
         lock.lock();
         try {
-            logger.info("Shutting down. Disabling local counters");
+            log.info("Shutting down. Disabling local counters");
             localCounterEnabled.set(false);
             scheduledExecutor.shutdown();
             sync();
         } finally {
             lock.unlock();
         }
-        logger.info("stop() complete");
+        log.info("stop() complete");
     }
 
     @Override
@@ -110,19 +106,19 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
      void sync() {
         if(syncInProgress.compareAndSet(false, true)) {
             try {
-                logger.debug("sync() initiated");
+                log.debug("sync() initiated");
                 localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
                     final AtomicLong atomicLong = entry.getValue();
                     final long count = atomicLong.get();
                     hazelcastIncrementer.increment(entry.getKey(), count);
                     atomicLong.addAndGet(-count);
                 });
-                logger.debug("sync() completed");
+                log.debug("sync() completed");
             } finally {
                 syncInProgress.compareAndSet(true, false);
             }
         } else {
-            logger.info("sync() skipped - already in progress");
+            log.info("sync() skipped - already in progress");
         }
     }
 
@@ -138,10 +134,10 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
      *
      **/
     public int resetLocalMap() {
-        logger.info("resetLocalMap() called");
+        log.info("resetLocalMap() called");
         if (lock.tryLock()) {
             try {
-                logger.info("resetLocalMap() initiated");
+                log.info("resetLocalMap() initiated");
                 localCounterEnabled.compareAndSet(true, false);
                 sync();
                 // Local map should only have zero counts
@@ -152,20 +148,20 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
                 // Normally, all items should be 0
                 if (localMap.mappingCount() == zeroKeys.size()) {
                     localMap.clear();
-                    logger.info("resetLocalMap() removed all items ({}) from local map", zeroKeys.size());
+                    log.info("resetLocalMap() removed all items ({}) from local map", zeroKeys.size());
                 } else { // If some items cannot be synced
                     zeroKeys.forEach(localMap::remove);
-                    logger.warn("resetLocalMap() removed {} items from local map, {} items remained.",
+                    log.warn("resetLocalMap() removed {} items from local map, {} items remained.",
                             zeroKeys.size(), localMap.mappingCount() - zeroKeys.size());
                 }
                 return zeroKeys.size();
             } finally {
                 lock.unlock();
                 localCounterEnabled.compareAndSet(false, true);
-                logger.info("resetLocalMap() completed");
+                log.info("resetLocalMap() completed");
             }
         } else {
-            logger.info("resetLocalMap() is already in progress");
+            log.info("resetLocalMap() is already in progress");
             return 0;
         }
     }
@@ -173,7 +169,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
 
     @Override
     public void clear() {
-        logger.warn("clear(): Removing all data!");
+        log.warn("clear(): Removing all data!");
         distributedMap.clear();
         localMap.clear();
     }

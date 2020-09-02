@@ -9,42 +9,45 @@ import java.util.Objects;
 /**
  * Response with id of the counter and its value
  */
-public class Count implements Comparable<Count>{
+public class Count<T> implements Comparable<Count<T>>{
 
-    private final String id;
-    private final Long count;
+    private final T id;
+    private final Long countVal;
 
     @JsonCreator
-    public Count(@JsonProperty("id") String id,
-                 @JsonProperty("count") Long count) {
+    public Count(@JsonProperty("id") T id,
+                 @JsonProperty("countVal") Long countVal) {
+        if(id == null) {
+            throw new IllegalArgumentException("id cannot be null");
+        }
         this.id = id;
-        this.count = count;
+        this.countVal = countVal == null ? 0L : countVal;
     }
 
-    public String getId() {
+    public T getId() {
         return id;
     }
 
-    public Long getCount() {
-        return count;
+    public Long getCountVal() {
+        return countVal;
     }
 
     @Override
     public int compareTo(Count o) {
-        return this.count.compareTo(o.count);
+        return this.countVal.compareTo(o.countVal);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Count that = (Count) o;
-        return Objects.equals(id, that.id) &&
-                Objects.equals(count, that.count);
+        Count<?> count1 = (Count<?>) o;
+        return id.equals(count1.id) &&
+                countVal.equals(count1.countVal);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, count);
+        return Objects.hash(id, countVal);
     }
 }

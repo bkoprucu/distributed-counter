@@ -1,6 +1,6 @@
 FROM openjdk:11-jre-slim
 
-COPY distributedcounter-service/target/distributedcounter-service-0.0.1-SNAPSHOT.jar /opt/app.jar
+COPY distributedcounter-service/target/distributedcounter-service-0.1.1-SNAPSHOT.jar /opt/app.jar
 
 # Rest port
 EXPOSE 8080/tcp

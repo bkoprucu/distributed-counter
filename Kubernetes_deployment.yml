@@ -15,7 +15,7 @@ spec:
         app: distributedcounter
     spec:
       containers:
-      - image: bkoprucu/distributedcounter:0.0.1-jersey
+      - image: bkoprucu/distributedcounter:0.1.1
         imagePullPolicy: Always
         name: distributedcounter
         ports:
