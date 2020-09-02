@@ -1,5 +1,5 @@
 spring:
-  application.name: distributedcounter
+  application.name: distributed-counter
   main:
     lazy-initialization: true
     web-application-type: REACTIVE

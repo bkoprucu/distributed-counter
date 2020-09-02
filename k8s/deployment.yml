@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distributedcounter-deployment
+  labels:
+    app: distributedcounter-app
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: distributedcounter-app
+  template:
+    metadata:
+      labels:
+        app: distributedcounter-app
+    spec:
+      containers:
+        - name: distributedcounter
+          image: bkoprucu/distributedcounter
+          #imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: service-port
+            - containerPort: 5701
+              name: hazelcast-port
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: distributedcounter-service
+  labels:
+    app: distributedcounter-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: distributedcounter-app
+  ports:
+  #  - port: 5701 # To access Hazelcast cluster from the outside
+  #    name: hazelcast
+    - port: 8080
+      name: service
+      targetPort: 8080
