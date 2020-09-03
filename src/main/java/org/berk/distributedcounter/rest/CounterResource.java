@@ -4,6 +4,7 @@ import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,11 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.validation.constraints.Positive;
+
 import static org.springframework.http.HttpStatus.CREATED;
 
 
 @RestController
 @RequestMapping(path = "counter", produces = MediaType.APPLICATION_JSON_VALUE)
+@Validated
 public class CounterResource {
 
     private final Counter counter;
@@ -29,7 +33,7 @@ public class CounterResource {
 
     @PutMapping("/count/{eventId}")
     public Mono<ResponseEntity<Long>> increment(@PathVariable("eventId") String eventId,
-                                                @RequestParam(name = "amount", required = false) Integer amount,
+                                                @RequestParam(name = "amount", required = false) @Positive(message = "amount must be positive") Integer amount,
                                                 @RequestParam(name = "requestId", required = false) String requestId) {
         return counter.incrementAsync(eventId, amount, requestId)
                    .map(ResponseEntity::ok)

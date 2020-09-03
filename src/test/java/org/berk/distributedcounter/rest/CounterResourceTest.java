@@ -154,4 +154,17 @@ public class CounterResourceTest {
         verify(counter).getCounts();
     }
 
+    @Test
+    public void shouldValidateRequest() {
+        webTestClient.put()
+             .uri(uriBuilder -> uriBuilder.path("counter/count/{eventId}")
+                                          .queryParam("amount", "-2")
+                                          .build(eventId))
+             .exchange()
+             .expectStatus().isBadRequest()
+             .expectHeader().contentType(MediaType.APPLICATION_JSON)
+             .expectBody()
+             .jsonPath("$.message").isEqualTo("increment.amount: amount must be positive");
+    }
+
 }
