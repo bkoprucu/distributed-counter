@@ -11,12 +11,12 @@ public final class HazelcastConfigBuilder {
 
     private final Config config;
 
-    public HazelcastConfigBuilder(String clusterName) {
-        this(clusterName, null);
+    public HazelcastConfigBuilder(String instanceName, String clusterName) {
+        this(instanceName, clusterName, null);
     }
 
-    public HazelcastConfigBuilder(String clusterName, @Nullable Integer port) {
-        config = new Config();
+    public HazelcastConfigBuilder(String instanceName, String clusterName, @Nullable Integer port) {
+        config = new Config(instanceName);
         config.setClusterName(clusterName);
         config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
         config.setProperty("hazelcast.logging.type", "slf4j");

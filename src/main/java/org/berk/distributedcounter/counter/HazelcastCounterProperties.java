@@ -13,24 +13,31 @@ import org.springframework.lang.Nullable;
 @ConstructorBinding
 public class HazelcastCounterProperties {
 
+    private static final String DEFAULT_INSTANCE_NAME = "distributedcounter";
+    private static final String DEFAULT_CLUSTER_NAME = "distributedCounter_cluster";
     private static final int DEFAULT_DEDUPLICATION_MAP_TIMEOUT_SECS = 600;
-    private static final String DEFAULT_CLUSTER_NAME = "DistributedCounter_Cluster";
 
+    private final String instanceName;
 
-    /**
-     * Name of the instance and Hazelcast group
-     */
     private final String clusterName;
 
     private final Integer deduplicationMapTimeOutSecs;
 
 
-    public HazelcastCounterProperties(@Nullable String clusterName, @Nullable Integer deduplicationMapTimeOutSecs) {
+    public HazelcastCounterProperties(@Nullable String instanceName,
+                                      @Nullable String clusterName,
+                                      @Nullable Integer deduplicationMapTimeOutSecs) {
+        this.instanceName = instanceName == null ? DEFAULT_INSTANCE_NAME
+                                                 : instanceName;
         this.clusterName = clusterName == null ? DEFAULT_CLUSTER_NAME
                                                : clusterName;
         this.deduplicationMapTimeOutSecs =
                 deduplicationMapTimeOutSecs == null ? DEFAULT_DEDUPLICATION_MAP_TIMEOUT_SECS
                                                     : deduplicationMapTimeOutSecs;
+    }
+
+    public String instanceName() {
+        return instanceName;
     }
 
     public String clusterName() {
@@ -43,28 +50,31 @@ public class HazelcastCounterProperties {
     }
 
     @Override
-    public String toString() {
-        return "HazelcastCounterProperties{" +
-                "clusterName='" + clusterName + '\'' +
-                ", deduplicationMapTimeOutSecs=" + deduplicationMapTimeOutSecs +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         HazelcastCounterProperties that = (HazelcastCounterProperties) o;
 
+        if (!instanceName.equals(that.instanceName)) return false;
         if (!clusterName.equals(that.clusterName)) return false;
         return deduplicationMapTimeOutSecs.equals(that.deduplicationMapTimeOutSecs);
     }
 
     @Override
     public int hashCode() {
-        int result = clusterName.hashCode();
+        int result = instanceName.hashCode();
+        result = 31 * result + clusterName.hashCode();
         result = 31 * result + deduplicationMapTimeOutSecs.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "HazelcastCounterProperties{" +
+                "instanceName='" + instanceName + '\'' +
+                ", clusterName='" + clusterName + '\'' +
+                ", deduplicationMapTimeOutSecs=" + deduplicationMapTimeOutSecs +
+                '}';
     }
 }

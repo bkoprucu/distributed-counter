@@ -19,14 +19,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 public class HazelcastCounterTest {
+    private final HazelcastCounterProperties counterProperties =
+            new HazelcastCounterProperties("testInstance", "testCluster", 10);
+
 
     private final HazelcastInstance hazelcastInstance =
-            HazelcastInstanceFactory.getOrCreateHazelcastInstance(new HazelcastConfigBuilder("testCluster")
+            HazelcastInstanceFactory.getOrCreateHazelcastInstance(new HazelcastConfigBuilder(counterProperties.instanceName(),
+                                                                                             counterProperties.clusterName())
                                                                           .withMulticastDiscovery()
                                                                           .getConfig());
 
-    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance,
-                                                                  new HazelcastCounterProperties("testCluster", 10));
+    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance, counterProperties);
 
     private final String eventId = "testEventId";
     private final String nonExistingEventId = "nonExistingEventId";

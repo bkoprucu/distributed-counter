@@ -1,15 +1,7 @@
-spring:
-  application.name: distributed-counter
-  main:
-    lazy-initialization: true
-    web-application-type: REACTIVE
-    banner-mode: off
-
 server:
   port: 8080
   shutdown: GRACEFUL
   compression.enabled: false
-
 
 logging.level:
   org.berk: DEBUG

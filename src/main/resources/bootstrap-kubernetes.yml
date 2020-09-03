@@ -1,0 +1,9 @@
+spring:
+  main:
+    cloud-platform: kubernetes
+  cloud:
+    kubernetes:
+      enabled: true
+      config:
+        enable-api: true
+        enabled: true
