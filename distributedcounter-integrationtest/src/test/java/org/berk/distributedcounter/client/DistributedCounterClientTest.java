@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class CounterClientTest {
+public class DistributedCounterClientTest {
 
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8080;

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -22,27 +23,29 @@ import java.net.UnknownHostException;
 @EnableWebFlux
 public class SpringConfig implements WebFluxConfigurer {
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LoggerFactory.getLogger(SpringConfig.class);
 
     /**
      * @param usePeriodicDistributingCounter if true use {@link PeriodicDistributingCounter} otherwise use {@link HazelcastCounter}
      * @param syncInterval sync interval for {@link PeriodicDistributingCounter}
      */
     @Bean
+    @Lazy(false) // Default bean initialization is lazy, but we need all the beans defined in this class to serve the requests right away
     Counter<String> counter(HazelcastInstance hazelcastInstance,
                             @Value("${counter.PeriodicDistributingCounter.enabled:false}") boolean usePeriodicDistributingCounter,
                             @Value("${counter.PeriodicDistributingCounter.syncInterval:1000}") Long syncInterval) {
         if(usePeriodicDistributingCounter) {
-            log.info("Using PeriodicDistributingCounter as counter implementation");
+            log.info("Configured Counter implementation: PeriodicDistributingCounter");
             return new PeriodicDistributingCounter<>(hazelcastInstance, syncInterval);
         } else {
-            log.info("Using HazelcastCounter as counter implementation");
+            log.info("Configured Counter implementation: HazelcastCounter");
             return new HazelcastCounter<>(hazelcastInstance);
         }
     }
 
 
     @Bean
+    @Lazy(false)
     Config hazelcastConfig(Environment environment) {
         final int processors = Runtime.getRuntime().availableProcessors();
         Config config = new Config("DistributedCounter_Instance");
@@ -61,9 +64,7 @@ public class SpringConfig implements WebFluxConfigurer {
         }
 
         config.addMapConfig(new MapConfig(HazelcastCounter.MAP_NAME)
-                .setEvictionConfig(new EvictionConfig().setEvictionPolicy(EvictionPolicy.NONE))
-                .setStatisticsEnabled(false));
-
+                .setEvictionConfig(new EvictionConfig().setEvictionPolicy(EvictionPolicy.NONE).setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_PERCENTAGE).setSize(10)));
         return config;
     }
 
@@ -72,14 +73,15 @@ public class SpringConfig implements WebFluxConfigurer {
      * Adds "Host" header to the response with the hostname / Docker container id
      */
     @Bean
+    @Lazy(false)
     WebFilter responseHostHeaderFilter() {
+        log.info("Initializing host header filter");
         return (exchange, chain) -> {
             try {
                 exchange.getResponse().getHeaders().add("Host", InetAddress.getLocalHost().getHostName());
             } catch (UnknownHostException e) {
                 log.warn("Cannot resolve hostname of local server / container");
             }
-            log.info("Initialized host header filter");
             return chain.filter(exchange);
         };
     }

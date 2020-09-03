@@ -1,21 +1,22 @@
 # Distributed counter
 
-Sample REST micro-service for counting events.
-Implementation uses Hazelcast in embedded mode to keep the counts in cluster scope: [`HazelcastCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java)
+Sample REST micro-service for counting events, implemented using Spring Boot 2 & Hazelcast
+
+Hazelcast has been used in embedded mode: [`HazelcastCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java)
 
 It uses Hazelcast executors to change counts, without needing a lock for synchronization in the cluster: [`HazelcastIncrementer`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastIncrementer.java)
 
-An extended implementation is provided to improve performance by counting using `AtomicLong` locally on each node and syncing them with Hazelcast in intervals, handling synchronization without locking:[`PeriodicDistributingCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java) 
+An (alternative) extended implementation is provided to improve performance by counting using `AtomicLong` locally on each node and syncing them with Hazelcast by intervals, 
+handling synchronization without locking:[`PeriodicDistributingCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java), 
+which can be configured in [application.yml](distributedcounter-service/src/main/resources/application.yml)  
 
-The [`Counter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/Counter.java) implementation can be chooses by defining it in [`Preferences`](distributedcounter-service/src/main/java/org/berk/distributedcounter/Preferences.java) 
+[Dockerfile](Dockerfile) and Kubernetes deployment and service configuration [provided](Kubernetes_deployment.yml)
 
 A client has been provided using Apache Http Client, in [distributedcounter-client](distributedcounter-client) module: [`CounterApacheClient`](distributedcounter-client/src/main/java/org/berk/distributedcounter/client/CounterApacheClient.java)
 
 Module [distributedcounter-api](distributedcounter-api) can be used to implement and alternative client; it provides the interface as well: [`CounterClient`](distributedcounter-api/src/main/java/org/berk/distributedcounter/client/CounterClient.java)   
 
 Project [distributedcounter-integrationtest](distributedcounter-integrationtest) Is a separate project, testing the service externally by using the client:  [`CounterClient`](distributedcounter-api/src/main/java/org/berk/distributedcounter/client/CounterClient.java)
-
-**This has been started as a Jersey practice project; from this version on the implementation will be moved to Spring Boot**   
 
 ## Prerequisites
   To build:
@@ -27,15 +28,12 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
     
 ## Configuring and running
 
-  * Externalized configuration and service discovery not implemented on this version. To configure nodes, edit [`Preferences`](distributedcounter-service/src/main/java/org/berk/distributedcounter/Preferences.java)
-    
-    If you skip this step, service will run using port 8080 for http, 950x for Hazelcast.
-        
+  * Configure which [`Counter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/Counter.java) implementation to use by editing [application.yml](distributedcounter-service/src/main/resources/application.yml)
   * Build using `mvn clean install` _(use_ `mvnw` _if Maven 3 is not present)_
   
   #### Running locally:
   ```
-  $ java -jar distributedcounter-service/target/distributedcounter-service-0.0.1-SNAPSHOT.jar
+  $ java -jar distributedcounter-service/target/distributedcounter-service-0.1.1-SNAPSHOT.jar
   ```
   #### Running a cluster of (unmanaged) Docker containers  
   Create a Docker bridge network to enable container to form a cluster:
@@ -44,12 +42,12 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   ```
   Run container instances, forming a cluster:
   ```
-  $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:0.0.1-jersey
-  $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:0.0.1-jersey
+  $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:0.1.1
+  $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:0.1.1
   ...
   ```
   #### Running a cluster using Kubernetes
-  Following will deploy a cluster of three pods, and a load balancer listening to port 8080:   
+  Deploy a cluster of three pods, and a load balancer listening to port 8080:   
   ```
   $ kubectl apply -f Kubernetes_deployment.yml
   ```

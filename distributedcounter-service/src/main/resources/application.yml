@@ -5,6 +5,7 @@ server:
 spring:
   main:
     cloud-platform: KUBERNETES
+    lazy-initialization: true
 
 counter:
   PeriodicDistributingCounter:
