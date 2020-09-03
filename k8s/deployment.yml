@@ -15,14 +15,17 @@ spec:
         app: distributedcounter
     spec:
       containers:
-      - image: bkoprucu/distributedcounter:0.1.1
-        imagePullPolicy: Always
-        name: distributedcounter
-        ports:
-          - containerPort: 8080
-        env:
-          - name: enableKubernetes
+        - image: bkoprucu/distributedcounter:0.1.1
+          imagePullPolicy: IfNotPresent
+          name: distributedcounter
+          ports:
+            - containerPort: 8080
+            - containerPort: 5701
+          env:
+            - name: enableKubernetes
+
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -30,10 +33,12 @@ metadata:
     app: distributedcounter
   name: distributedcounter
 spec:
-  ports:
-    - port: 8080
-      protocol: TCP
-      targetPort: 8080
+  type: LoadBalancer
   selector:
     app: distributedcounter
-  type: LoadBalancer
+  ports:
+    - port: 5701
+      name: hazelcast
+    - port: 8080
+      name: http
+      targetPort: 8080

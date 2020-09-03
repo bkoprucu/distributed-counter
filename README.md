@@ -10,7 +10,7 @@ An (alternative) extended implementation is provided to improve performance by c
 handling synchronization without locking:[`PeriodicDistributingCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java), 
 which can be configured in [application.yml](distributedcounter-service/src/main/resources/application.yml)  
 
-[Dockerfile](Dockerfile) and Kubernetes deployment and service configuration [provided](Kubernetes_deployment.yml)
+[Dockerfile](Dockerfile) and Kubernetes deployment and service configuration [provided](k8s/Kubernetes_deployment.yml)
 
 A client has been provided using Apache Http Client, in [distributedcounter-client](distributedcounter-client) module: [`CounterApacheClient`](distributedcounter-client/src/main/java/org/berk/distributedcounter/client/CounterApacheClient.java)
 
@@ -49,7 +49,7 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   #### Running a cluster using Kubernetes
   Deploy a cluster of three pods, and a load balancer listening to port 8080:   
   ```
-  $ kubectl apply -f Kubernetes_deployment.yml
+  $ kubectl apply -f k8s/
   ```
   
 ## Usage  
