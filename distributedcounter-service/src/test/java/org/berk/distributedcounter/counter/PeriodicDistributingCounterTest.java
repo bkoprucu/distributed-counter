@@ -67,7 +67,7 @@ public class PeriodicDistributingCounterTest extends HazelcastTest {
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
         counter.sync();
-        Awaitility.await().atMost(counter.getSyncInterval() * 10, MILLISECONDS).until(() ->
+        Awaitility.await().atMost(counter.getSyncInterval() * 20, MILLISECONDS).until(() ->
                 !counter.isSyncInProgress());
         IntStream.range(0, threads)
                 .forEach(value -> assertEquals(eventCount, counter.getCount(prefix + value).getCountVal()));

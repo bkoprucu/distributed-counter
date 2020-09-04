@@ -1,41 +1,67 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: distributedcounter-deployment
   labels:
-    app: distributedcounter
-  name: distributedcounter
+    app: distributedcounter-app
+
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: distributedcounter
+      app: distributedcounter-app
   template:
     metadata:
       labels:
-        app: distributedcounter
+        app: distributedcounter-app
     spec:
       containers:
-        - image: bkoprucu/distributedcounter:0.1.1
-          imagePullPolicy: IfNotPresent
-          name: distributedcounter
+        - name: distributedcounter
+          image: bkoprucu/distributedcounter:0.1.1
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
+              name: service-port
             - containerPort: 5701
+              name: hazelcast-port
           env:
             - name: enableKubernetes
+          livenessProbe: # will restart if fails
+            httpGet:
+              port: service-port
+              path: /actuator/health/liveness
+            initialDelaySeconds: 20
+            timeoutSeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              port: service-port
+              path: /actuator/health/readiness
+            initialDelaySeconds: 20
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 2
+
+#          resources:
+#            requests:
+#              memory: "512Mi"
+#              cpu: "2000m"
+#            limits:
+#              memory: "2048Mi"
+#              cpu: "3000m"
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
+  name: distributedcounter-service
   labels:
-    app: distributedcounter
-  name: distributedcounter
+    app: distributedcounter-app
 spec:
   type: LoadBalancer
   selector:
-    app: distributedcounter
+    app: distributedcounter-app
   ports:
     - port: 5701
       name: hazelcast
