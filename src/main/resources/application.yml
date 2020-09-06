@@ -1,7 +1,11 @@
-server:
-  port: 8080
-  shutdown: GRACEFUL
-  compression.enabled: false
+management:
+  endpoints:
+    web.exposure.include: "*"
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
 
 logging.level:
   org.berk: DEBUG

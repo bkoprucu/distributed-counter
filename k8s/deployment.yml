@@ -28,7 +28,28 @@ spec:
             - name: spring_profiles_active
               value: kubernetes
             - name: JAVA_OPTS
-              value: "-Xms512M -Xmx1G -Xss1024k"
+              value: "-Xss1024k -XX:MaxRAMPercentage=75"
+          livenessProbe: # will restart if fails
+            httpGet:
+              port: service-port
+              path: /actuator/health/liveness
+            initialDelaySeconds: 60
+            timeoutSeconds: 3
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: service-port
+              path: /actuator/health/readiness
+            initialDelaySeconds: 40
+            timeoutSeconds: 3
+            periodSeconds: 5
+            failureThreshold: 1
+          resources:
+            requests:
+              memory: 512M
+            limits:
+              memory: 1024M
 ---
 
 apiVersion: v1
