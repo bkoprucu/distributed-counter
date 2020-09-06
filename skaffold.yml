@@ -1,0 +1,26 @@
+apiVersion: skaffold/v2beta7
+kind: Config
+metadata:
+  name: distributedcounter-service
+build:
+  artifacts:
+    - image: bkoprucu/distributedcounter
+  #    jib: {}
+  # Disabled Jib, since it's redundant when using Dockerfile.
+  # Dockerfile gives more control
+  #  spring boot provides a build-image plugin since 2.3 as shown below, which can replace jib, but problematic as of 2.3.3:
+  #    custom:
+  #      buildCommand: mvn -Dspring-boot.build-image.imageName=$IMAGE spring-boot:build-image
+  #      dependencies:
+  #        paths:
+  #          - src
+  #          - pom.xml
+  tagPolicy:
+    sha256:  {}
+
+deploy:
+  kubectl:
+    manifests:
+      - k8s/configmap.yml
+      - k8s/deployment.yml
+      - k8s/rbac.yml
