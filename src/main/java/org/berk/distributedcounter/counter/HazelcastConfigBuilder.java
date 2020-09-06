@@ -20,7 +20,7 @@ public final class HazelcastConfigBuilder {
         config.setClusterName(clusterName);
         config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
         config.setProperty("hazelcast.logging.type", "slf4j");
-        config.getExecutorConfig("DistributedCounter_Executor")
+        config.getExecutorConfig("distributedCounter_executor")
               .setPoolSize(Runtime.getRuntime().availableProcessors());
 
         if(port != null) {

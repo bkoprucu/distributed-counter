@@ -1,7 +1,11 @@
 package org.berk.distributedcounter.rest;
 
 import org.berk.distributedcounter.counter.Counter;
+import org.berk.distributedcounter.counter.HazelcastCounterProperties;
 import org.berk.distributedcounter.rest.api.EventCount;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +21,9 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.Positive;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.springframework.http.HttpStatus.CREATED;
 
 
@@ -27,8 +34,16 @@ public class CounterResource {
 
     private final Counter counter;
 
-    public CounterResource(Counter counter) {
+    private final HazelcastCounterProperties counterProperties;
+
+    private final Environment environment;
+
+    private static final Logger log  = LoggerFactory.getLogger(CounterResource.class);
+
+    public CounterResource(Counter counter, Environment environment, HazelcastCounterProperties counterProperties) {
         this.counter = counter;
+        this.environment = environment;
+        this.counterProperties = counterProperties;
     }
 
     @PutMapping("/count/{eventId}")
@@ -64,5 +79,15 @@ public class CounterResource {
     public Flux<EventCount> listCounts() {
         return counter.getCounts();
     }
+
+
+    @GetMapping("/admin/info") // For testing
+    public Mono<Map<String, String>> info() {
+        log.debug("GET /info called");
+        return Mono.fromCallable(() -> Map.of("Profiles:", List.of(environment.getActiveProfiles()).toString(),
+                                 "counter properties:", counterProperties.toString()));
+
+    }
+
 
 }

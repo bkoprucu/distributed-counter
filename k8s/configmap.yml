@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: distributed-counter # Should match spring.application.name for spring-cloud-kubernetes to pick it up
+data:
+  hazelcastcounter.cluster-name: "counter-cluster-kubernetes"
+  hazelcastcounter.instance-name: "counter-instance-kubernetes"
+

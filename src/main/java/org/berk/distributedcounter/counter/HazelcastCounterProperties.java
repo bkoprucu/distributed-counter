@@ -21,19 +21,19 @@ public class HazelcastCounterProperties {
 
     private final String clusterName;
 
-    private final Integer deduplicationMapTimeOutSecs;
+    private final Integer deduplicationMapTimeoutSecs;
 
 
     public HazelcastCounterProperties(@Nullable String instanceName,
                                       @Nullable String clusterName,
-                                      @Nullable Integer deduplicationMapTimeOutSecs) {
+                                      @Nullable Integer deduplicationMapTimeoutSecs) {
         this.instanceName = instanceName == null ? DEFAULT_INSTANCE_NAME
                                                  : instanceName;
         this.clusterName = clusterName == null ? DEFAULT_CLUSTER_NAME
                                                : clusterName;
-        this.deduplicationMapTimeOutSecs =
-                deduplicationMapTimeOutSecs == null ? DEFAULT_DEDUPLICATION_MAP_TIMEOUT_SECS
-                                                    : deduplicationMapTimeOutSecs;
+        this.deduplicationMapTimeoutSecs =
+                deduplicationMapTimeoutSecs == null ? DEFAULT_DEDUPLICATION_MAP_TIMEOUT_SECS
+                                                    : deduplicationMapTimeoutSecs;
     }
 
     public String instanceName() {
@@ -46,7 +46,7 @@ public class HazelcastCounterProperties {
 
 
     public Integer getDeduplicationMapTimeOutSecs() {
-        return deduplicationMapTimeOutSecs;
+        return deduplicationMapTimeoutSecs;
     }
 
     @Override
@@ -58,14 +58,14 @@ public class HazelcastCounterProperties {
 
         if (!instanceName.equals(that.instanceName)) return false;
         if (!clusterName.equals(that.clusterName)) return false;
-        return deduplicationMapTimeOutSecs.equals(that.deduplicationMapTimeOutSecs);
+        return deduplicationMapTimeoutSecs.equals(that.deduplicationMapTimeoutSecs);
     }
 
     @Override
     public int hashCode() {
         int result = instanceName.hashCode();
         result = 31 * result + clusterName.hashCode();
-        result = 31 * result + deduplicationMapTimeOutSecs.hashCode();
+        result = 31 * result + deduplicationMapTimeoutSecs.hashCode();
         return result;
     }
 
@@ -74,7 +74,7 @@ public class HazelcastCounterProperties {
         return "HazelcastCounterProperties{" +
                 "instanceName='" + instanceName + '\'' +
                 ", clusterName='" + clusterName + '\'' +
-                ", deduplicationMapTimeOutSecs=" + deduplicationMapTimeOutSecs +
+                ", deduplicationMapTimeOutSecs=" + deduplicationMapTimeoutSecs +
                 '}';
     }
 }
