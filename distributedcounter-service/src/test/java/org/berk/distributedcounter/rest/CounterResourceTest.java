@@ -96,10 +96,8 @@ public class CounterResourceTest {
         assertTrue(counters.containsAll(List.of(firstCount, secondCount)));
     }
 
-    //    TODO implement global error handler and enable this
     @Test
-    @Disabled
-    public void validate_input() {
+    public void invalid_input_should_respond_with_http_400() {
         Count<String> firstCount = new Count<>("first", 1L);
         Count<String> secondCount = new Count<>("second", 2L);
         when(counter.listCounters(null , null)).thenReturn(Stream.of(firstCount, secondCount));
@@ -109,13 +107,5 @@ public class CounterResourceTest {
                 .expectStatus().isBadRequest();
     }
 
-/*
-    @Test
-    public void handle_errors() {
-        when(counter.getCount(anyString())).thenThrow(new IllegalArgumentException());
-        Response response =  target("counter/count/user1")
-                .request(APPLICATION_JSON_TYPE).get();
-        assertEquals(NOT_ALLOWED.getStatusCode(), response.getStatus());
-    }
-*/
+
 }
