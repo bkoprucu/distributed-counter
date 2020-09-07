@@ -29,6 +29,10 @@ spec:
               value: kubernetes
             - name: JAVA_OPTS
               value: "-Xss1024k -XX:MaxRAMPercentage=75"
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           livenessProbe: # will restart if fails
             httpGet:
               port: service-port

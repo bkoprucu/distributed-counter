@@ -6,8 +6,7 @@ import org.springframework.lang.Nullable;
 
 
 /**
- * External configuration class, for the counter
- * Uses Java records notation for future compatibility, instead of bean notation
+ * External configuration class for the counter
  */
 @ConfigurationProperties(prefix = "hazelcastcounter")
 @ConstructorBinding

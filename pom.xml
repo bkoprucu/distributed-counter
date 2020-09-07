@@ -20,7 +20,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>11</java.version>
         <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
-        <versions-plugin-version>2.7</versions-plugin-version>
 
         <hazelcast.version>4.0.2</hazelcast.version>
         <hazelcast-kubernetes.version>2.0.2</hazelcast-kubernetes.version>

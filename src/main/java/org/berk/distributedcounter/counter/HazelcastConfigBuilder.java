@@ -29,7 +29,6 @@ public final class HazelcastConfigBuilder {
         }
     }
 
-    /** Configure Hazelcast for static member discovery */
     public HazelcastConfigBuilder withStaticTcpDiscovery(List<String> members) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
@@ -41,7 +40,6 @@ public final class HazelcastConfigBuilder {
     }
 
 
-    /** Configure Hazelcast for multicast discovery */
     public HazelcastConfigBuilder withMulticastDiscovery() {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
@@ -49,7 +47,6 @@ public final class HazelcastConfigBuilder {
         return this;
     }
 
-    /** Configure Hazelcast for kubernetes discovery */
     public HazelcastConfigBuilder withKubernetesDiscovery() {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()

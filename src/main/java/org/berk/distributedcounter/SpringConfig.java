@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 @ConfigurationPropertiesScan(basePackageClasses = HazelcastCounterProperties.class)
 public class SpringConfig {
 
-    private final Logger log = LoggerFactory.getLogger(SpringConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(SpringConfig.class);
 
     @Bean
     @Lazy(false)
@@ -46,4 +46,5 @@ public class SpringConfig {
         return configBuilder.withMulticastDiscovery()
                             .getConfig();
     }
+
 }

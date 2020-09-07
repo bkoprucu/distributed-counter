@@ -18,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import javax.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
@@ -85,7 +87,10 @@ public class CounterResource {
     public Mono<Map<String, String>> info() {
         log.debug("GET /info called");
         return Mono.fromCallable(() -> Map.of("Profiles:", List.of(environment.getActiveProfiles()).toString(),
-                                 "counter properties:", counterProperties.toString()));
+                                 "counter properties:", counterProperties.toString(),
+                                 "Pod Name", Objects.requireNonNullElse(environment.getProperty("HOSTNAME"), ""),
+                                 "Pod IP", Objects.requireNonNullElse(environment.getProperty("MY_POD_IP"), "")))
+                .subscribeOn(Schedulers.boundedElastic());
 
     }
 
