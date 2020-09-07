@@ -1,6 +1,9 @@
 management:
   endpoints:
     web.exposure.include: "*"
+    enabled-by-default: true
+  info.build.enabled: true
+
   health:
     readinessstate:
       enabled: true
