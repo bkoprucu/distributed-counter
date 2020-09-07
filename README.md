@@ -1,12 +1,16 @@
 
 ### Distributed counter
 
-Using Hazelcast for handling concurrency and consistency cases in distributed computing 
+Spring Webflux + Hazelcast + Kubernetes for testing:
+- Concurrency and consistency cases in distributed computing,
+- Integrating Kubernetes and Spring Boot for configuration management, tooling & monitoring. 
+
+#### Usage: 
+[REST API](src/main/java/org/berk/distributedcounter/rest/CounterResource.java)
 
 
-- [REST API](src/main/java/org/berk/distributedcounter/rest/CounterResource.java)
-- [Distributed counter with request deduplication](src/main/java/org/berk/distributedcounter/hazelcast/HazelcastCounter.java)
-
-Requires:
-- Java 8
+#### Requires:
+- Java 11
 - Maven 3.5
+- Docker
+- Kubernetes
