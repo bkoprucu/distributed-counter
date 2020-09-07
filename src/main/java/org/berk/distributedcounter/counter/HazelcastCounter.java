@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.CompletionStage;
 
@@ -74,7 +75,8 @@ public class HazelcastCounter implements Counter {
 
     @Override
     public Mono<Integer> getSize() {
-        return Mono.fromCallable(distributedMap::size);
+        return Mono.fromCallable(distributedMap::size)
+                   .subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
@@ -82,18 +84,20 @@ public class HazelcastCounter implements Counter {
         return Flux.fromStream(() ->distributedMap
                 .entrySet()
                 .stream()
-                .map(entry -> new EventCount(entry.getKey(), entry.getValue())));
+                .map(entry -> new EventCount(entry.getKey(), entry.getValue())))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     @Override
-    public void remove(String eventId, String requestId) {
-        // Atomically check for requestId for deduplication / idempotency
-        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
-            distributedMap.delete(eventId);
-            log.info("Removed entry {}", eventId);
-            return;
-        }
-        log.info("Duplicate remove request for eventId: {}.  with requestId: {}", eventId, requestId);
+    public Mono<Void> remove(String eventId, String requestId) {
+        return Mono.fromRunnable(() -> {
+            // Atomically check for requestId for deduplication / idempotency
+            if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
+                log.info("Removing counter: {} with value: {}", eventId, distributedMap.remove(eventId));
+            } else {
+                log.info("Duplicate remove request for eventId: {}.  with requestId: {}", eventId, requestId);
+            }
+        }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 
 

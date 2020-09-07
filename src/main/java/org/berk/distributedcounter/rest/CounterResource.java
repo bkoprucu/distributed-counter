@@ -48,7 +48,8 @@ public class CounterResource {
 
     @PutMapping("/count/{eventId}")
     public Mono<ResponseEntity<Long>> increment(@PathVariable("eventId") String eventId,
-                                                @RequestParam(name = "amount", required = false) @Positive(message = "amount must be positive") Integer amount,
+                                                @RequestParam(name = "amount", required = false)
+                                                @Positive(message = "amount must be positive") Integer amount,
                                                 @RequestParam(name = "requestId", required = false) String requestId) {
         return counter.incrementAsync(eventId, amount, requestId)
                    .map(ResponseEntity::ok)
@@ -64,10 +65,9 @@ public class CounterResource {
     }
 
     @DeleteMapping("/count/{eventId}")
-    public ResponseEntity<Void> deleteCount(@PathVariable("eventId") String eventId,
+    public Mono<Void> deleteCount(@PathVariable("eventId") String eventId,
                                             @RequestParam(name = "requestId") String requestId) {
-        counter.remove(eventId, requestId);
-        return ResponseEntity.ok().build();
+        return counter.remove(eventId, requestId);
     }
 
     @GetMapping("/size")

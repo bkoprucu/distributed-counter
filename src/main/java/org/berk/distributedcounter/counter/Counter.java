@@ -33,7 +33,7 @@ public interface Counter {
      * @param eventId    Counter to delete or reset
      * @param requestId  Unique id for idempotency, can be null
      */
-    void remove(String eventId, String requestId);
+    Mono<Void> remove(String eventId, String requestId);
 
     Mono<Long> getCountAsync(String eventId);
 

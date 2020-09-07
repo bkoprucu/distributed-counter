@@ -10,7 +10,6 @@ import reactor.core.publisher.Flux;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -20,14 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class HazelcastCounterTest {
     private final HazelcastCounterProperties counterProperties =
-            new HazelcastCounterProperties("testInstance", "testCluster", 10);
+            new HazelcastCounterProperties("testInstance", "testCluster", null);
 
 
     private final HazelcastInstance hazelcastInstance =
-            HazelcastInstanceFactory.getOrCreateHazelcastInstance(new HazelcastConfigBuilder(counterProperties.instanceName(),
-                                                                                             counterProperties.clusterName())
-                                                                          .withMulticastDiscovery()
-                                                                          .getConfig());
+            HazelcastInstanceFactory.getOrCreateHazelcastInstance(
+                    new HazelcastConfigBuilder(counterProperties.instanceName(),
+                                               counterProperties.clusterName())
+                            .withMulticastDiscovery()
+                            .getConfig());
 
     private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance, counterProperties);
 
@@ -35,34 +35,33 @@ public class HazelcastCounterTest {
     private final String nonExistingEventId = "nonExistingEventId";
 
     @BeforeEach
-    public void setUp() throws ExecutionException, InterruptedException {
+    public void setUp()  {
         counter.clear();
-
         assertNull(counter.getCountAsync(eventId).block());
         assertNull(counter.getCountAsync(nonExistingEventId).block());
     }
 
 
     @Test
-    public void shouldReturnNullForNonExisting() throws ExecutionException, InterruptedException {
+    public void shouldReturnNullForNonExisting()  {
         assertNull(counter.getCountAsync(nonExistingEventId).block());
     }
 
     @Test
-    public void shouldIncrementByOne() throws ExecutionException, InterruptedException {
+    public void shouldIncrementByOne()  {
         long count = 10L;
         LongStream.range(0, count).forEach(value -> counter.incrementAsync(eventId, null));
         assertEquals(count, counter.getCountAsync(eventId).block());
     }
 
     @Test
-    public void shouldIncrementByOneWhenAmountIsNull() throws ExecutionException, InterruptedException {
+    public void shouldIncrementByOneWhenAmountIsNull() {
         counter.incrementAsync(eventId, null, null);
         assertEquals(1L, counter.getCountAsync(eventId).block());
     }
 
     @Test
-    public void shouldIncrementByGivenAmount() throws ExecutionException, InterruptedException {
+    public void shouldIncrementByGivenAmount() {
         long count = 10L;
         int amount = 2;
         LongStream.range(0, count).forEach(value -> counter.incrementAsync(eventId, amount, null));
@@ -70,7 +69,7 @@ public class HazelcastCounterTest {
     }
 
     @Test
-    public void shouldDeduplicateIncermentForSameRequestId() throws ExecutionException, InterruptedException {
+    public void shouldDeduplicateIncermentForSameRequestId() {
         String requestId = UUID.randomUUID().toString();
         Long count = Flux.fromStream(
                                  IntStream.range(0, 5)
@@ -83,7 +82,7 @@ public class HazelcastCounterTest {
 
 
     @Test
-    public void shouldDeduplicateIncrementByGivenAmountAndSameRequestId()  {
+    public void shouldDeduplicateIncrementByGivenAmountAndSameRequestId() {
         final int amount = 3;
         String requestId = UUID.randomUUID().toString();
         Long count = Flux.fromStream(
@@ -101,7 +100,7 @@ public class HazelcastCounterTest {
         counter.incrementAsync("one", null);
         counter.incrementAsync("two", null);
         assertEquals(2, counter.getSize().block());
-        counter.remove("one", null);
+        counter.remove("one", null).block();
         assertEquals(1, counter.getSize().block());
     }
 
@@ -114,24 +113,24 @@ public class HazelcastCounterTest {
     }
 
     @Test
-    public void shouldRemove() throws ExecutionException, InterruptedException {
+    public void shouldRemove() {
         counter.incrementAsync(eventId, 5, null).block();
         assertEquals(5L, counter.getCountAsync(eventId).block());
-        counter.remove(eventId, null);
+        counter.remove(eventId, null).block();
         assertNull(counter.getCountAsync(eventId).block());
     }
 
     @Test
-    public void shouldRemoveOnceForSameRequestId() throws ExecutionException, InterruptedException {
+    public void shouldRemoveOnceForSameRequestId() {
         String requestId = UUID.randomUUID().toString();
         counter.incrementAsync(eventId, 5, null).block();
         assertEquals(5L, counter.getCountAsync(eventId).block());
-        counter.remove(eventId, requestId);
+        counter.remove(eventId, requestId).block();
         assertNull(counter.getCountAsync(eventId).block());
 
         counter.incrementAsync(eventId, 5, null).block();
         assertEquals(5L, counter.getCountAsync(eventId).block());
-        counter.remove(eventId, requestId); // Duplicate request, should be ignored
+        counter.remove(eventId, requestId).block(); // Duplicate request, should be ignored
         assertEquals(5L, counter.getCountAsync(eventId).block());
     }
 
