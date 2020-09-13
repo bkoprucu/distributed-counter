@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: distributedcounter # Should match spring.application.name for spring-cloud-kubernetes to pick it up
+data:
+  counter.group-name: kubernetes
+  counter.description: "Configured in Kubernetes ConfigMap"
+  counter.local-cache-sync-interval: 1s

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,7 +29,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     private final Logger log = LoggerFactory.getLogger(PeriodicDistributingCounter.class);
 
     // Delay between sync operations
-    private final long syncInterval;
+    private final Duration syncInterval;
 
     private final ConcurrentHashMap<T, AtomicLong> localMap;
     private final ScheduledExecutorService scheduledExecutor;
@@ -42,7 +43,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     // Sync status
     private final AtomicBoolean syncInProgress;
 
-    public PeriodicDistributingCounter(HazelcastInstance hazelcastInstance, long syncInterval) {
+    public PeriodicDistributingCounter(HazelcastInstance hazelcastInstance, Duration syncInterval) {
         super(hazelcastInstance);
         this.syncInterval = syncInterval;
         localMap = new ConcurrentHashMap<>();
@@ -54,9 +55,10 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
 
     @PostConstruct
     void init() {
-        log.info("Starting sync executor. Delay={} ms", syncInterval);
+        log.info("Starting sync executor. Delay={}", syncInterval);
+        final long syncIntervalMillis = syncInterval.toMillis();
         scheduledExecutor.scheduleWithFixedDelay(this::sync,
-                syncInterval, syncInterval, TimeUnit.MILLISECONDS);
+                syncIntervalMillis, syncIntervalMillis, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -92,7 +94,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     }
 
 
-    public long getSyncInterval() {
+    public Duration getSyncInterval() {
         return syncInterval;
     }
 

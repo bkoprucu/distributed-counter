@@ -2,24 +2,16 @@ server:
   port: 8080
   shutdown: GRACEFUL
 
-spring:
-  main:
-    lazy-initialization: true
-    cloud-platform: KUBERNETES
-
 management:
-  endpoint.health.show-details: ALWAYS
   endpoints:
     web.exposure.include: "*"
-
   health:
     readinessstate:
       enabled: true
     livenessstate:
       enabled: true
 
-
 counter:
-  PeriodicDistributingCounter:
-    enabled: true # Set false to use HazelcastCounter
-    syncInterval: 500   # Delay between sync operations in PeriodicDistributingCounter
+  group-name: counter_group_default
+  use-local-caching: true           # If true, use PeriodicDistributingCounter, otherwise use HazelcastCounter
+  local-cache-sync-interval: 500ms  # Sync interval for PeriodicDistributingCounter

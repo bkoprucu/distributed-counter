@@ -1,0 +1,6 @@
+spring:
+  application.name: distributedcounter
+  cloud.kubernetes.enabled: false  # Enabled in kubernetes profiles
+  main:
+    lazy-initialization: true
+    web-application-type: REACTIVE

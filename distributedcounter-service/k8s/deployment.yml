@@ -25,30 +25,24 @@ spec:
             - containerPort: 5701
               name: hazelcast-port
           env:
-            - name: enableKubernetes
+            - name: spring_profiles_active
+              value: kubernetes
           livenessProbe: # will restart if fails
             httpGet:
               port: service-port
               path: /actuator/health/liveness
-            initialDelaySeconds: 20
+            initialDelaySeconds: 50
             timeoutSeconds: 10
             periodSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               port: service-port
               path: /actuator/health/readiness
-            initialDelaySeconds: 20
-            timeoutSeconds: 5
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
             periodSeconds: 5
-            failureThreshold: 2
-
-#          resources:
-#            requests:
-#              memory: "512Mi"
-#              cpu: "2000m"
-#            limits:
-#              memory: "2048Mi"
-#              cpu: "3000m"
+            failureThreshold: 3
 
 ---
 
@@ -66,5 +60,5 @@ spec:
     - port: 5701
       name: hazelcast
     - port: 8080
-      name: http
+      name: service
       targetPort: 8080

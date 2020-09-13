@@ -5,6 +5,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
@@ -15,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PeriodicDistributingCounterTest extends HazelcastTest {
 
-    private final PeriodicDistributingCounter<String> counter = new PeriodicDistributingCounter<>(hazelcastInstance, 500);
+    private final PeriodicDistributingCounter<String> counter = new PeriodicDistributingCounter<>(hazelcastInstance, Duration.ofMillis(500));
 
 
     @BeforeEach
@@ -28,7 +29,7 @@ public class PeriodicDistributingCounterTest extends HazelcastTest {
         String eventId = UUID.randomUUID().toString();
         int count = 100;
         IntStream.range(0, count).forEach(value ->  counter.increment(eventId));
-        Awaitility.await().atMost(counter.getSyncInterval() * 3, MILLISECONDS)
+        Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(5))
                 .until(() -> !counter.isSyncInProgress() && counter.getCount(eventId).getCountVal() > 0);
         assertEquals(count, counter.getCount(eventId).getCountVal());
     }
@@ -49,7 +50,7 @@ public class PeriodicDistributingCounterTest extends HazelcastTest {
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
         counter.sync();
-        Awaitility.await().atMost(counter.getSyncInterval() * 10, MILLISECONDS).until(() ->
+        Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(10)).until(() ->
                 !counter.isSyncInProgress());
         // All counters should have correct values
         IntStream.range(0, threads)
@@ -63,11 +64,10 @@ public class PeriodicDistributingCounterTest extends HazelcastTest {
         String prefix = generateEventIdPrefix();
         ExecutorService executor = load(counter, threads, eventCount, prefix);
         counter.resetLocalMap();
-        counter.resetLocalMap();
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
         counter.sync();
-        Awaitility.await().atMost(counter.getSyncInterval() * 20, MILLISECONDS).until(() ->
+        Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(10)).until(() ->
                 !counter.isSyncInProgress());
         IntStream.range(0, threads)
                 .forEach(value -> assertEquals(eventCount, counter.getCount(prefix + value).getCountVal()));

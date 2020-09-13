@@ -3,11 +3,12 @@ package org.berk.distributedcounter;
 import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastInstance;
 import org.berk.distributedcounter.counter.Counter;
+import org.berk.distributedcounter.counter.CounterProperties;
 import org.berk.distributedcounter.counter.HazelcastCounter;
 import org.berk.distributedcounter.counter.PeriodicDistributingCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -18,25 +19,21 @@ import org.springframework.web.server.WebFilter;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableWebFlux
+@ConfigurationPropertiesScan(basePackageClasses = CounterProperties.class)
 public class SpringConfig implements WebFluxConfigurer {
 
     private final Logger log = LoggerFactory.getLogger(SpringConfig.class);
 
-    /**
-     * @param usePeriodicDistributingCounter if true use {@link PeriodicDistributingCounter} otherwise use {@link HazelcastCounter}
-     * @param syncInterval sync interval for {@link PeriodicDistributingCounter}
-     */
     @Bean
-    @Lazy(false) // Default bean initialization is lazy, but we need all the beans defined in this class to serve the requests right away
-    Counter<String> counter(HazelcastInstance hazelcastInstance,
-                            @Value("${counter.PeriodicDistributingCounter.enabled:false}") boolean usePeriodicDistributingCounter,
-                            @Value("${counter.PeriodicDistributingCounter.syncInterval:1000}") Long syncInterval) {
-        if(usePeriodicDistributingCounter) {
+    @Lazy(false) // Create the beans defined in this class to serve the requests right away
+    Counter<String> counter(HazelcastInstance hazelcastInstance, CounterProperties counterProperties) {
+        if(counterProperties.useLocalCaching()) {
             log.info("Configured Counter implementation: PeriodicDistributingCounter");
-            return new PeriodicDistributingCounter<>(hazelcastInstance, syncInterval);
+            return new PeriodicDistributingCounter<>(hazelcastInstance, counterProperties.localCacheSyncInterval());
         } else {
             log.info("Configured Counter implementation: HazelcastCounter");
             return new HazelcastCounter<>(hazelcastInstance);
@@ -46,23 +43,22 @@ public class SpringConfig implements WebFluxConfigurer {
 
     @Bean
     @Lazy(false)
-    Config hazelcastConfig(Environment environment) {
-        final int processors = Runtime.getRuntime().availableProcessors();
-        Config config = new Config("DistributedCounter_Instance");
-        config.setClusterName("DistributedCounter_Group");
-        config.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
-        config.setProperty("hazelcast.logging.type", "slf4j");
-        config.getExecutorConfig("exec").setPoolSize(processors).setQueueCapacity(Integer.MAX_VALUE);
+    Config hazelcastConfig(Environment environment, CounterProperties counterProperties) {
+        Config config = new Config("distributedcounter");
+        config.setClusterName(counterProperties.groupName())
+                .setProperty("hazelcast.shutdownhook.policy", "GRACEFUL")
+                .setProperty("hazelcast.logging.type", "slf4j")
+                .getExecutorConfig("exec").setPoolSize(Runtime.getRuntime().availableProcessors());
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        if(environment.containsProperty("enableKubernetes")) {
+        if (Stream.of(environment.getActiveProfiles()).anyMatch(profile -> profile.equalsIgnoreCase("kubernetes"))) {
             log.info("Configuring Hazelcast for Kubernetes discovery");
             joinConfig.getMulticastConfig().setEnabled(false);
-            joinConfig.getKubernetesConfig().setEnabled(true);
+            KubernetesConfig kubernetesConfig = joinConfig.getKubernetesConfig();
+            kubernetesConfig.setEnabled(true);
         } else {
             log.info("Configuring Hazelcast for multicast discovery");
             joinConfig.getMulticastConfig().setEnabled(true);
         }
-
         config.addMapConfig(new MapConfig(HazelcastCounter.MAP_NAME)
                 .setEvictionConfig(new EvictionConfig().setEvictionPolicy(EvictionPolicy.NONE).setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_PERCENTAGE).setSize(10)));
         return config;

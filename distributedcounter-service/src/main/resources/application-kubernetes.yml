@@ -1,0 +1,3 @@
+counter:
+  group-name: counter_group_kubernetes
+  description: "Fallback configuration for kubernetes profile"

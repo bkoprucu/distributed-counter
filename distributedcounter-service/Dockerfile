@@ -1,7 +1,7 @@
 # Image for distributedcounter-service
 FROM adoptopenjdk:11-jre-hotspot as builder
 WORKDIR app
-ARG JAR_FILE=distributedcounter-service/target/distributedcounter-service-0.1.1-SNAPSHOT.jar
+ARG JAR_FILE=target/distributedcounter-service-0.1.1-SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
