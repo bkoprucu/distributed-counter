@@ -4,7 +4,7 @@ import org.berk.distributedcounter.api.Count;
 
 import java.util.List;
 
-public interface CounterClient {
+public interface DistributedCounterClient {
     /** @return Value of the counter identified with counterId */
     long getCount(String counterId);
 

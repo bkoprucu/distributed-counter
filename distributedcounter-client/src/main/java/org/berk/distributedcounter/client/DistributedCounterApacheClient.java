@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import static org.apache.hc.core5.util.TextUtils.isBlank;
 
 
-public class CounterApacheClient implements CounterClient, Closeable {
+public class DistributedCounterApacheClient implements DistributedCounterClient, Closeable {
 
     private boolean sharedHttpClient;
     private final CloseableHttpClient httpClient;
@@ -46,9 +46,9 @@ public class CounterApacheClient implements CounterClient, Closeable {
     private final ObjectReader listReader;
 
 
-    private static final Logger log = LoggerFactory.getLogger(CounterApacheClient.class);
+    private static final Logger log = LoggerFactory.getLogger(DistributedCounterApacheClient.class);
 
-    private CounterApacheClient(String host, int port, CloseableHttpClient httpClient) {
+    private DistributedCounterApacheClient(String host, int port, CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
         this.baseUriStr = String.format("http://%s:%d/counter/", host, port);
         this.countUriStr = baseUriStr + "count/";
@@ -60,16 +60,16 @@ public class CounterApacheClient implements CounterClient, Closeable {
 
 
     /** Create a client with pool and connection parameters. This will create the pool and ClosableHttpClient instance  */
-    public static CounterApacheClient newClient(String host, int port, int connectTimeout, int requestTimeout, int threadPoolSize) {
-        CounterApacheClient distributedCounterClient = newClient(host, port, httpClient(connectTimeout, requestTimeout, threadPoolSize));
+    public static DistributedCounterApacheClient newClient(String host, int port, int connectTimeout, int requestTimeout, int threadPoolSize) {
+        DistributedCounterApacheClient distributedCounterClient = newClient(host, port, httpClient(connectTimeout, requestTimeout, threadPoolSize));
         distributedCounterClient.sharedHttpClient = false;
         return distributedCounterClient;
     }
 
     /** Create a client using a already existing HttpClient instance */
-    public static CounterApacheClient newClient(String host, int port, CloseableHttpClient httpClient) {
+    public static DistributedCounterApacheClient newClient(String host, int port, CloseableHttpClient httpClient) {
         Objects.requireNonNull(httpClient);
-        CounterApacheClient distributedCounterClient = new CounterApacheClient(host, port, httpClient);
+        DistributedCounterApacheClient distributedCounterClient = new DistributedCounterApacheClient(host, port, httpClient);
         distributedCounterClient.sharedHttpClient = true;
         return distributedCounterClient;
     }

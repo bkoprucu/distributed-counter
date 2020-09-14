@@ -28,12 +28,12 @@ public class CounterProperties {
     private final String description;
 
     /**
-     * Use {@link PeriodicDistributingCounter} which has local caching capability, otherwise use {@link HazelcastCounter}
+     * Use {@link LocalCachingHazelcastCounter} which has local caching capability, otherwise use {@link HazelcastCounter}
      */
     private final boolean useLocalCaching;
 
     /**
-     * Sync interval for {@link PeriodicDistributingCounter}, ignored if {@link #useLocalCaching} is "false"
+     * Sync interval for {@link LocalCachingHazelcastCounter}, ignored if {@link #useLocalCaching} is "false"
      */
     private final Duration localCacheSyncInterval;
 

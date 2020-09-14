@@ -27,7 +27,7 @@ public class DistributedCounterClientTest {
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8080;
 
-    private static final CounterApacheClient client = CounterApacheClient.newClient(
+    private static final DistributedCounterApacheClient client = DistributedCounterApacheClient.newClient(
             SERVER_HOST, SERVER_PORT, 250, 1000, 8);
 
 

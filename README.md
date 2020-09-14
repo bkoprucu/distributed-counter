@@ -1,40 +1,34 @@
 # Distributed counter
 
-Sample REST micro-service for counting events, implemented using Spring Boot 2 & Hazelcast
+Sample REST micro-service for counting events. Demonstrates usage of following technologies:
+ - Java 11
+ - Spring Boot 2 in reactive mode
+ - Hazelcast in embedded mode
+ - [Hazelcast cluster discovery using Kubernetes or multicast](distributedcounter-service/src/main/java/org/berk/distributedcounter/SpringConfig.java), depending the environment and selected Spring-Boot profile
+ - [Docker](distributedcounter-service/Dockerfile), using multiple layers
+ - Kubernetes and spring-cloud-kubernetes for linking ConfigMaps with Spring @ConfigurationProperties
+ - Skaffold for local Kubernetes development environment
+ 
+Counter implementation [`HazelcastCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java) utilizes Hazelcast executors for updating counter values, avoiding locks in cluster scope, for better performance: [`HazelcastIncrementer`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastIncrementer.java)
 
-Hazelcast has been used in embedded mode: [`HazelcastCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java)
+An alternative counter; [`LocalCachingHazelcastCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/LocalCachingHazelcastCounter.java) updates values using `AtomicLong` locally on each node, and syncs them with Hazelcast cluster periodically, without using locks. This demonstrates an idea of further improving the performance.
 
-It uses Hazelcast executors to change counts, without needing a lock for synchronization in the cluster: [`HazelcastIncrementer`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastIncrementer.java)
+REST api is placed in a separate module "[distributedcounter-api](distributedcounter-api)"   
 
-An (alternative) extended implementation is provided to improve performance by counting using `AtomicLong` locally on each node and syncing them with Hazelcast by intervals, 
-handling synchronization without locking:[`PeriodicDistributingCounter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/HazelcastCounter.java), 
-which can be configured in [application.yml](distributedcounter-service/src/main/resources/application.yml)  
+Integration tests are in a separate project: [distributedcounter-integrationtest](distributedcounter-integrationtest)
 
-[Dockerfile](Dockerfile) and Kubernetes deployment and service configuration [provided](k8s/Kubernetes_deployment.yml)
-
-A client has been provided using Apache Http Client, in [distributedcounter-client](distributedcounter-client) module: [`CounterApacheClient`](distributedcounter-client/src/main/java/org/berk/distributedcounter/client/CounterApacheClient.java)
-
-Module [distributedcounter-api](distributedcounter-api) can be used to implement and alternative client; it provides the interface as well: [`CounterClient`](distributedcounter-api/src/main/java/org/berk/distributedcounter/client/CounterClient.java)   
-
-Project [distributedcounter-integrationtest](distributedcounter-integrationtest) Is a separate project, testing the service externally by using the client:  [`CounterClient`](distributedcounter-api/src/main/java/org/berk/distributedcounter/client/CounterClient.java)
-
-## Prerequisites
-  To build:
-  * JDK 11
-  
-  To run containers:
-  * Docker
-  * Kubernetes
     
 ## Configuring and running
 
-  * Configure which [`Counter`](distributedcounter-service/src/main/java/org/berk/distributedcounter/counter/Counter.java) implementation to use by editing [application.yml](distributedcounter-service/src/main/resources/application.yml)
-  * Build using `mvn clean install` _(use_ `mvnw` _if Maven 3 is not present)_
+  * Build using `mvn clean install` _(use_ `mvnw` _if Maven 3 is not present)_. Since this ia a multi module project, `distributedcounter-api` module needs to be installed to be able to build `distributedcounter-service` module separately.
   
-  #### Running locally:
+  #### Running on a Kubernetes managed cluster
+  Default configuration will deploy a cluster of three pods, and a load balancer listening on 8080:   
   ```
-  $ java -jar distributedcounter-service/target/distributedcounter-service-0.1.1-SNAPSHOT.jar
+  $ kubectl apply -f k8s/
   ```
+  Update [ConfigMap](distributedcounter-service/k8s/configmap.yml) to change service parameters
+  
   #### Running a cluster of (unmanaged) Docker containers  
   Create a Docker bridge network to enable container to form a cluster:
   ```
@@ -45,11 +39,6 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   $ docker run --rm --network distributedcounter --name counter1 -p 8080:8080 bkoprucu/distributedcounter:0.1.1
   $ docker run --rm --network distributedcounter --name counter2 -p 8081:8080 bkoprucu/distributedcounter:0.1.1
   ...
-  ```
-  #### Running a cluster using Kubernetes
-  Deploy a cluster of three pods, and a load balancer listening to port 8080:   
-  ```
-  $ kubectl apply -f k8s/
   ```
   
 ## Usage  
@@ -90,12 +79,6 @@ Project [distributedcounter-integrationtest](distributedcounter-integrationtest)
   [{"id":"Event4","count":1},{"id":"Test Id","count":1},{"id":"Event3","count":1},{"id":"Event1","count":6}]
   ```
   
-## Using the client
-  
-  Module **distributedcounter-client** provides a Java client implementation using Apache Http Client
-  
-  Sample usage of the client and some performance tests are in [`DistributedCounterClientTest`](distributedcounter-integrationtest/src/test/java/org/berk/distributedcounter/client/DistributedCounterClientTest.java)
-
 <br/>
 
 _Author: Berk Köprücü [https://github.com/bkoprucu](https://github.com/bkoprucu)   -   [https://www.linkedin.com/in/koprucu](https://www.linkedin.com/in/koprucu/)_

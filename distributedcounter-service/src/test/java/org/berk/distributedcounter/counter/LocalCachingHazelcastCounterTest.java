@@ -10,13 +10,12 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PeriodicDistributingCounterTest extends HazelcastTest {
+public class LocalCachingHazelcastCounterTest extends HazelcastTest {
 
-    private final PeriodicDistributingCounter<String> counter = new PeriodicDistributingCounter<>(hazelcastInstance, Duration.ofMillis(500));
+    private final LocalCachingHazelcastCounter<String> counter = new LocalCachingHazelcastCounter<>(hazelcastInstance, Duration.ofMillis(500));
 
 
     @BeforeEach

@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
  * Counts the events on local ConcurrentHashMap using AtomicLong, and synchronizes to Hazelcast periodically.
  * This way it can perform better than HazelcastCounter, though the results will be delayed by syncInterval
  */
-public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
+public class LocalCachingHazelcastCounter<T> extends HazelcastCounter<T> {
 
-    private final Logger log = LoggerFactory.getLogger(PeriodicDistributingCounter.class);
+    private final Logger log = LoggerFactory.getLogger(LocalCachingHazelcastCounter.class);
 
     // Delay between sync operations
     private final Duration syncInterval;
@@ -43,7 +43,7 @@ public class PeriodicDistributingCounter<T> extends HazelcastCounter<T> {
     // Sync status
     private final AtomicBoolean syncInProgress;
 
-    public PeriodicDistributingCounter(HazelcastInstance hazelcastInstance, Duration syncInterval) {
+    public LocalCachingHazelcastCounter(HazelcastInstance hazelcastInstance, Duration syncInterval) {
         super(hazelcastInstance);
         this.syncInterval = syncInterval;
         localMap = new ConcurrentHashMap<>();

@@ -5,7 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.counter.CounterProperties;
 import org.berk.distributedcounter.counter.HazelcastCounter;
-import org.berk.distributedcounter.counter.PeriodicDistributingCounter;
+import org.berk.distributedcounter.counter.LocalCachingHazelcastCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -31,13 +31,11 @@ public class SpringConfig implements WebFluxConfigurer {
     @Bean
     @Lazy(false) // Create the beans defined in this class to serve the requests right away
     Counter<String> counter(HazelcastInstance hazelcastInstance, CounterProperties counterProperties) {
-        if(counterProperties.useLocalCaching()) {
-            log.info("Configured Counter implementation: PeriodicDistributingCounter");
-            return new PeriodicDistributingCounter<>(hazelcastInstance, counterProperties.localCacheSyncInterval());
-        } else {
-            log.info("Configured Counter implementation: HazelcastCounter");
-            return new HazelcastCounter<>(hazelcastInstance);
-        }
+        Counter<String> counter = counterProperties.useLocalCaching()
+                ? new LocalCachingHazelcastCounter<>(hazelcastInstance, counterProperties.localCacheSyncInterval())
+                : new HazelcastCounter<>(hazelcastInstance);
+        log.info("Configured Counter implementation: {}", counter.getClass().getSimpleName());
+        return counter;
     }
 
 
