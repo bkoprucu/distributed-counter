@@ -9,13 +9,13 @@ import java.util.Objects;
 /**
  * Response with id of the counter and its value
  */
-public class Count<T> implements Comparable<Count<T>>{
+public class Count implements Comparable<Count>{
 
-    private final T id;
+    private final String id;
     private final Long countVal;
 
     @JsonCreator
-    public Count(@JsonProperty("id") T id,
+    public Count(@JsonProperty("id") String id,
                  @JsonProperty("countVal") Long countVal) {
         if(id == null) {
             throw new IllegalArgumentException("id cannot be null");
@@ -24,7 +24,7 @@ public class Count<T> implements Comparable<Count<T>>{
         this.countVal = countVal == null ? 0L : countVal;
     }
 
-    public T getId() {
+    public String getId() {
         return id;
     }
 
@@ -41,7 +41,7 @@ public class Count<T> implements Comparable<Count<T>>{
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Count<?> count1 = (Count<?>) o;
+        Count count1 = (Count) o;
         return id.equals(count1.id) &&
                 countVal.equals(count1.countVal);
     }

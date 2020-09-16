@@ -30,10 +30,10 @@ public class SpringConfig implements WebFluxConfigurer {
 
     @Bean
     @Lazy(false) // Create the beans defined in this class to serve the requests right away
-    Counter<String> counter(HazelcastInstance hazelcastInstance, CounterProperties counterProperties) {
-        Counter<String> counter = counterProperties.useLocalCaching()
-                ? new LocalCachingHazelcastCounter<>(hazelcastInstance, counterProperties.localCacheSyncInterval())
-                : new HazelcastCounter<>(hazelcastInstance);
+    Counter counter(HazelcastInstance hazelcastInstance, CounterProperties counterProperties) {
+        Counter counter = counterProperties.useLocalCaching()
+                ? new LocalCachingHazelcastCounter(hazelcastInstance, counterProperties.localCacheSyncInterval())
+                : new HazelcastCounter(hazelcastInstance);
         log.info("Configured Counter implementation: {}", counter.getClass().getSimpleName());
         return counter;
     }

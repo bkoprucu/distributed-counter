@@ -23,12 +23,12 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CounterResourceTest {
     @MockBean
-    Counter<String> counter;
+    Counter counter;
 
     @Autowired
     private WebTestClient webTestClient;
 
-    private static final GenericType<Count<String>> COUNT_STRING_TYPE = new GenericType<>(){};
+    private static final GenericType<Count> COUNT_STRING_TYPE = new GenericType<>(){};
 
 
     @Test
@@ -44,7 +44,7 @@ public class CounterResourceTest {
     @Test
     public void get_count() {
         String counterId = "abc";
-        final Count<String> count = new Count<>(counterId, 5L);
+        final Count count = new Count(counterId, 5L);
         doReturn(count).when(counter).getCount(eq(counterId));
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder.path("counter/count/{counterId}").build(counterId))
@@ -80,17 +80,17 @@ public class CounterResourceTest {
 
     @Test
     public void list_counters() {
-        Count<String> firstCount = new Count<>("first", 1L);
-        Count<String> secondCount = new Count<>("second", 2L);
+        Count firstCount = new Count("first", 1L);
+        Count secondCount = new Count("second", 2L);
         when(counter.listCounters(null , null)).thenReturn(Stream.of(firstCount, secondCount));
-        FluxExchangeResult<Count<String>> result = webTestClient.get()
+        FluxExchangeResult<Count> result = webTestClient.get()
                 .uri("counter/list")
                 .exchange()
                 .expectStatus().isOk()
                 .returnResult(new ParameterizedTypeReference<>() { });
 
 
-        List<Count<String>> counters = result.getResponseBody().collectList().block();
+        List<Count> counters = result.getResponseBody().collectList().block();
         assertNotNull(counters);
         assertEquals(2, counters.size());
         assertTrue(counters.containsAll(List.of(firstCount, secondCount)));
@@ -98,8 +98,8 @@ public class CounterResourceTest {
 
     @Test
     public void invalid_input_should_respond_with_http_400() {
-        Count<String> firstCount = new Count<>("first", 1L);
-        Count<String> secondCount = new Count<>("second", 2L);
+        Count firstCount = new Count("first", 1L);
+        Count secondCount = new Count("second", 2L);
         when(counter.listCounters(null , null)).thenReturn(Stream.of(firstCount, secondCount));
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/counter/list").queryParam("item_count", -3L).build())

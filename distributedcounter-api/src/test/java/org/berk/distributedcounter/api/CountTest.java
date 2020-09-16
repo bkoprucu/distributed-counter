@@ -13,12 +13,12 @@ public class CountTest {
     @Test
     public void shouldSerialize() throws Exception {
         assertEquals("{\"id\":\"Test Id\",\"countVal\":123}",
-                MAPPER.writeValueAsString(new Count<>("Test Id", 123L)));
+                MAPPER.writeValueAsString(new Count("Test Id", 123L)));
     }
 
     @Test
     public void shouldDeserialize() throws Exception {
-        assertEquals(new Count<>("Test Id", 123L),
+        assertEquals(new Count("Test Id", 123L),
                 MAPPER.readValue("{\"id\":\"Test Id\",\"countVal\":123}", Count.class));
     }
 }

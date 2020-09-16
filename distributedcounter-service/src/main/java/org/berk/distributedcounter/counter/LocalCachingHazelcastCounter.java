@@ -24,14 +24,14 @@ import java.util.stream.Collectors;
  * Counts the events on local ConcurrentHashMap using AtomicLong, and synchronizes to Hazelcast periodically.
  * This way it can perform better than HazelcastCounter, though the results will be delayed by syncInterval
  */
-public class LocalCachingHazelcastCounter<T> extends HazelcastCounter<T> {
+public class LocalCachingHazelcastCounter extends HazelcastCounter {
 
     private final Logger log = LoggerFactory.getLogger(LocalCachingHazelcastCounter.class);
 
     // Delay between sync operations
     private final Duration syncInterval;
 
-    private final ConcurrentHashMap<T, AtomicLong> localMap;
+    private final ConcurrentHashMap<String, AtomicLong> localMap;
     private final ScheduledExecutorService scheduledExecutor;
 
     // Lock is only used by administrative methods: stop() and resetLocalMap()
@@ -81,7 +81,7 @@ public class LocalCachingHazelcastCounter<T> extends HazelcastCounter<T> {
     }
 
     @Override
-    public void increment(T counterId) {
+    public void increment(String counterId) {
         if (localCounterEnabled.get()) {
             // If there is no counter in the map, put 1 and return
             final AtomicLong cnt = localMap.putIfAbsent(counterId, new AtomicLong(1L));
@@ -143,7 +143,7 @@ public class LocalCachingHazelcastCounter<T> extends HazelcastCounter<T> {
                 localCounterEnabled.compareAndSet(true, false);
                 sync();
                 // Local map should only have zero counts
-                final List<T> zeroKeys = localMap.entrySet().stream()
+                final List<String> zeroKeys = localMap.entrySet().stream()
                         .filter(entry -> entry.getValue().get() == 0L)
                         .map(Map.Entry::getKey)
                         .collect(Collectors.toList());
@@ -176,7 +176,8 @@ public class LocalCachingHazelcastCounter<T> extends HazelcastCounter<T> {
         localMap.clear();
     }
 
-    public void removeCounter(T counterId) {
+    @Override
+    public void removeCounter(String counterId) {
         localMap.remove(counterId);
         super.removeCounter(counterId);
     }

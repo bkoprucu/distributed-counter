@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HazelcastCounterTest extends HazelcastTest {
 
-    private final HazelcastCounter<String> counter = new HazelcastCounter<>(hazelcastInstance);
+    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance);
 
     @Test
     public void should_count() {
@@ -58,21 +58,21 @@ public class HazelcastCounterTest extends HazelcastTest {
         Assumptions.assumeTrue(counter.getSize() == 0);
 
         int counterSize = 10;
-        List<Count<String>> expectedCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
+        List<Count> expectedCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
             counter.increment("counter_" + value);
-            return new Count<>("counter_" + value, 1L);
+            return new Count("counter_" + value, 1L);
         }).collect(Collectors.toList());
 
-        List<Count<String>> counts = counter.listCounters(null, null).collect(Collectors.toList());
+        List<Count> counts = counter.listCounters(null, null).collect(Collectors.toList());
 
         assertTrue(expectedCounts.containsAll(counts));
         assertEquals(counterSize, counts.size());
 
         // Test pagination
-        Stream<Count<String>> countsPage1 = counter.listCounters(null, 4);
-        Stream<Count<String>> countsPage2 = counter.listCounters(4, 4);
-        Stream<Count<String>> countsPage3 = counter.listCounters(8, 4);
-        List<Count<String>> allPages = Stream.concat(countsPage1, Stream.concat(countsPage2, countsPage3)).collect(Collectors.toList());
+        Stream<Count> countsPage1 = counter.listCounters(null, 4);
+        Stream<Count> countsPage2 = counter.listCounters(4, 4);
+        Stream<Count> countsPage3 = counter.listCounters(8, 4);
+        List<Count> allPages = Stream.concat(countsPage1, Stream.concat(countsPage2, countsPage3)).collect(Collectors.toList());
         assertTrue(expectedCounts.containsAll(allPages));
         assertEquals(counterSize, allPages.size());
 

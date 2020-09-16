@@ -78,8 +78,10 @@ Integration tests are in a separate project: [distributedcounter-integrationtest
   $ curl -w "\n" http://localhost:8080/counter/list?from_index=50&item_count=50
   [{"id":"Event4","count":1},{"id":"Test Id","count":1},{"id":"Event3","count":1},{"id":"Event1","count":6}]
   ```
-  
+## Notes
+  Although service has been implemented using spring-webflux, this is primarily for demonstration purposes, since embedded Hazelcast won't be delaying the threads much, 
+  and if it is running out of resources, the whole service is about to run out of resources as well. 
+
 <br/>
 
 _Author: Berk Köprücü [https://github.com/bkoprucu](https://github.com/bkoprucu)   -   [https://www.linkedin.com/in/koprucu](https://www.linkedin.com/in/koprucu/)_
-

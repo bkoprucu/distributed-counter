@@ -21,7 +21,7 @@ public interface DistributedCounterClient {
      * @param itemCount  How many items to list, can be null to list max. items
      * @return List of {@link Count }
      */
-    List<Count<String>> getCounters(Integer fromIndex, Integer itemCount);
+    List<Count> getCounters(Integer fromIndex, Integer itemCount);
 
     /**
      * @return Total number of counters

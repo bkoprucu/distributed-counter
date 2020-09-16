@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 /**
  * Counters on distributed Hazelcast Map
  */
-public class HazelcastCounter<T> implements Counter<T> {
+public class HazelcastCounter implements Counter {
 
     private final Logger log = LoggerFactory.getLogger(HazelcastCounter.class);
 
@@ -21,8 +21,8 @@ public class HazelcastCounter<T> implements Counter<T> {
     public static final int MAX_ITEMS_PER_PAGE = 100_000;
 
 
-    protected final IMap<T, Long> distributedMap;
-    protected final HazelcastIncrementer<T> hazelcastIncrementer;
+    protected final IMap<String, Long> distributedMap;
+    protected final HazelcastIncrementer<String> hazelcastIncrementer;
 
     public HazelcastCounter(HazelcastInstance hazelcastInstance) {
         distributedMap = hazelcastInstance.getMap(MAP_NAME);
@@ -30,35 +30,35 @@ public class HazelcastCounter<T> implements Counter<T> {
     }
 
     @Override
-    public void increment(T counterId) {
+    public void increment(String counterId) {
         hazelcastIncrementer.increment(counterId);
     }
 
     @Override
-    public void increment(T counterId, long amount) {
+    public void increment(String counterId, long amount) {
         hazelcastIncrementer.increment(counterId, amount);
     }
 
     @Override
-    public Count<T> getCount(T counterId) {
-        return new Count<>(counterId, distributedMap.getOrDefault(counterId, 0L));
+    public Count getCount(String counterId) {
+        return new Count(counterId, distributedMap.getOrDefault(counterId, 0L));
     }
 
     @Override
-    public Stream<Count<T>> listCounters(Integer fromIndex, Integer itemCount) {
+    public Stream<Count> listCounters(Integer fromIndex, Integer itemCount) {
         long skip = Optional.ofNullable(fromIndex).filter(fr -> fr > 0).orElse(0); // If from is negative or null, take 0
         long listSize = Optional.ofNullable(itemCount).orElse(MAX_ITEMS_PER_PAGE);
 
         return distributedMap.entrySet().stream()
                 .skip(skip)
                 .limit(listSize)
-                .map(entry -> new Count<>(entry.getKey(), entry.getValue()));
+                .map(entry -> new Count(entry.getKey(), entry.getValue()));
     }
 
 
     /** @inheritDoc */
     @Override
-    public void removeCounter(T counterId) {
+    public void removeCounter(String counterId) {
         log.info("Removing counter: {}", counterId);
         distributedMap.delete(counterId);
     }

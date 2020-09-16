@@ -32,7 +32,10 @@ import java.util.stream.Collectors;
 
 import static org.apache.hc.core5.util.TextUtils.isBlank;
 
-
+/**
+ * Sample synchronized client using Apache HttpClient, without any Spring stuff
+ * @deprecated Use Spring WebClient or OpenFeign
+ */
 public class DistributedCounterApacheClient implements DistributedCounterClient, Closeable {
 
     private boolean sharedHttpClient;
@@ -54,7 +57,7 @@ public class DistributedCounterApacheClient implements DistributedCounterClient,
         this.countUriStr = baseUriStr + "count/";
         mapper = new ObjectMapper();
         countReader = mapper.readerFor(Count.class);
-        listReader = mapper.readerFor(new TypeReference<List<Count<?>>>() {}); // we avoid generating TypeRef and reader
+        listReader = mapper.readerFor(new TypeReference<List<Count>>() {}); // we avoid generating TypeRef and reader
         log.info("Logger initialized for baseUri:{}", baseUriStr);
     }
 
@@ -128,7 +131,7 @@ public class DistributedCounterApacheClient implements DistributedCounterClient,
                 throw new CounterClientException(response.getReasonPhrase());
             }
             try (InputStream contentStream = response.getEntity().getContent()) {
-                Count<?> count = countReader.readValue(contentStream);
+                Count count = countReader.readValue(contentStream);
                 return count.getCountVal();
             }
         } catch (IOException ex) {
@@ -167,7 +170,7 @@ public class DistributedCounterApacheClient implements DistributedCounterClient,
 
 
     @Override
-    public List<Count<String>> getCounters(Integer fromIndex, Integer itemCount) {
+    public List<Count> getCounters(Integer fromIndex, Integer itemCount) {
         Map<String, Integer> queryParams = new HashMap<>();
         if(fromIndex != null) {
             queryParams.put("from_index", fromIndex);
@@ -186,7 +189,7 @@ public class DistributedCounterApacheClient implements DistributedCounterClient,
     }
 
 
-    public List<Count<String>> getCounters() {
+    public List<Count> getCounters() {
         return getCounters(null , null);
     }
 

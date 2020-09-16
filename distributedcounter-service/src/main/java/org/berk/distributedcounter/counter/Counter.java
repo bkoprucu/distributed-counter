@@ -7,18 +7,18 @@ import java.util.stream.Stream;
 /**
  * @param <T> Counter item type
  */
-public interface Counter<T> {
+public interface Counter {
 
-    void increment(T counterId);
+    void increment(String counterId);
 
-    void increment(T counterId, long amount);
+    void increment(String counterId, long amount);
 
-    Count<T> getCount(T counterId);
+    Count getCount(String counterId);
 
     /**
      * Administrative method for removing / resetting  a counter
      * */
-    void removeCounter(T counterId);
+    void removeCounter(String counterId);
 
 
     /**
@@ -27,7 +27,7 @@ public interface Counter<T> {
      * @param itemCount How many items to list, null will
      * @return Map containing counters
      */
-    Stream<Count<T>> listCounters(Integer fromIndex, Integer itemCount);
+    Stream<Count> listCounters(Integer fromIndex, Integer itemCount);
 
     /**
      * Returns total number of counters

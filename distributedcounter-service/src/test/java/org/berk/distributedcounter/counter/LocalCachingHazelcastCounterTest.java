@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LocalCachingHazelcastCounterTest extends HazelcastTest {
 
-    private final LocalCachingHazelcastCounter<String> counter = new LocalCachingHazelcastCounter<>(hazelcastInstance, Duration.ofMillis(500));
+    private final LocalCachingHazelcastCounter counter = new LocalCachingHazelcastCounter(hazelcastInstance, Duration.ofMillis(500));
 
 
     @BeforeEach

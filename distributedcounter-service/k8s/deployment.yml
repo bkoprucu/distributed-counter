@@ -18,7 +18,7 @@ spec:
       containers:
         - name: distributedcounter
           image: bkoprucu/distributedcounter:0.1.1
-          imagePullPolicy: Always
+          #imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: service-port
@@ -43,6 +43,12 @@ spec:
             timeoutSeconds: 10
             periodSeconds: 5
             failureThreshold: 3
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  minReadySeconds: 10
+
 
 ---
 

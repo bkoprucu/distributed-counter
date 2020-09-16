@@ -22,9 +22,9 @@ import java.util.Optional;
 @Validated
 public class CounterResource {
 
-    private final Counter<String> counter;
+    private final Counter counter;
 
-    public CounterResource(Counter<String> counter) {
+    public CounterResource(Counter counter) {
         this.counter = counter;
     }
 
@@ -42,8 +42,8 @@ public class CounterResource {
     }
 
     @GetMapping("/count/{id}")
-    public Mono<Count<String>> getCount(@NotEmpty(message = "Parameter 'id' is mandatory")
-                                        @PathVariable("id") String counterId) {
+    public Mono<Count> getCount(@NotEmpty(message = "Parameter 'id' is mandatory")
+                                    @PathVariable("id") String counterId) {
         log.debug("GET /count/{} called", counterId);
         return Mono.fromCallable(() -> counter.getCount(counterId));
     }
@@ -56,7 +56,7 @@ public class CounterResource {
     }
 
     @GetMapping("/list")
-    public Flux<Count<String>> listCounters(@RequestParam(name = "from_index", required = false) @Min(0) Integer fromIndex,
+    public Flux<Count> listCounters(@RequestParam(name = "from_index", required = false) @Min(0) Integer fromIndex,
                                     @RequestParam(name = "item_count", required = false) @Max(500_000) @Min(1) Integer itemCount) {
         log.debug("GET /list called");
         return Flux.fromStream(counter.listCounters(fromIndex, itemCount));
