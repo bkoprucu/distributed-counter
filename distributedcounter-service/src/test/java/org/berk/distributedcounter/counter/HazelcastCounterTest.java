@@ -19,7 +19,7 @@ public class HazelcastCounterTest extends HazelcastTest {
     private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance);
 
     @Test
-    public void should_count() {
+    public void increment() {
         String eventId = UUID.randomUUID().toString();
         int count = 100;
         IntStream.range(0, count).forEach(value ->  counter.increment(eventId));
@@ -27,33 +27,34 @@ public class HazelcastCounterTest extends HazelcastTest {
     }
 
     @Test
-    public void should_return_zero_for_non_existing_counter() {
+    public void return_zero_for_non_existing_counter() {
         assertEquals(0, counter.getCount(UUID.randomUUID().toString()).getCountVal());
     }
 
     @Test
-    public void shouldHandleMultipleThreads() throws Exception {
+    public void handle_concurrency() throws Exception {
         final int threads = 24;
         final int eventCount = 3000;
-        ExecutorService executor = load(counter, threads, eventCount, "counter-");
+        String countIdPrefix = randomCountId();
+        ExecutorService executor = load(counter, threads, eventCount, countIdPrefix);
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
         //  should have correct values
         IntStream.range(0, threads)
-                .forEach(value -> assertEquals(eventCount, counter.getCount("counter-" + value).getCountVal()));
+                .forEach(value -> assertEquals(eventCount, counter.getCount(countIdPrefix + value).getCountVal()));
     }
 
     @Test
-    public void should_get_size() {
+    public void getSize() {
         int before = counter.getSize();
 
-        IntStream.range(0, 10).forEach(value -> counter.increment(UUID.randomUUID().toString()));
+        IntStream.range(0, 10).forEach(value -> counter.increment(randomCountId()));
         assertEquals(10, counter.getSize() - before);
     }
 
 
     @Test
-    public void should_list_counters() {
+    public void listCounters() {
         counter.clear();
         Assumptions.assumeTrue(counter.getSize() == 0);
 
@@ -79,8 +80,8 @@ public class HazelcastCounterTest extends HazelcastTest {
     }
 
     @Test
-    public void should_clear() {
-        counter.increment(UUID.randomUUID().toString());
+    public void clear() {
+        counter.increment(randomCountId());
         assertNotEquals(0, counter.getSize());
         counter.clear();
         assertEquals(0, counter.getSize());

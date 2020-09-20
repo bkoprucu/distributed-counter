@@ -24,7 +24,7 @@ public class LocalCachingHazelcastCounterTest extends HazelcastTest {
     }
 
     @Test
-    public void should_count()  {
+    public void increment()  {
         String eventId = UUID.randomUUID().toString();
         int count = 100;
         IntStream.range(0, count).forEach(value ->  counter.increment(eventId));
@@ -40,11 +40,11 @@ public class LocalCachingHazelcastCounterTest extends HazelcastTest {
 
 
     @Test
-    public void should_handle_concurrency() throws Exception {
+    public void handle_concurrency() throws InterruptedException {
         final int threads = 12;
         final int eventCount = 250_000;
 
-        String prefix = generateEventIdPrefix();
+        String prefix = randomCountId();
         ExecutorService executor = load(counter, threads, eventCount, prefix);
         executor.shutdown();
         executor.awaitTermination(10, SECONDS);
@@ -60,7 +60,7 @@ public class LocalCachingHazelcastCounterTest extends HazelcastTest {
     public void resetLocalMap_under_load() throws Exception {
         final int threads = 12;
         final int eventCount = 250_000; //250 times more than HazelcastCounterManager
-        String prefix = generateEventIdPrefix();
+        String prefix = randomCountId();
         ExecutorService executor = load(counter, threads, eventCount, prefix);
         counter.resetLocalMap();
         executor.shutdown();

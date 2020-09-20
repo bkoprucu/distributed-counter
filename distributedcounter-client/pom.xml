@@ -11,6 +11,7 @@
 
     <artifactId>distributedcounter-client</artifactId>
 
+
     <dependencies>
         <dependency>
             <groupId>org.berk.distributedcounter</groupId>
@@ -19,16 +20,29 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>5.0.1</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>2.27.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

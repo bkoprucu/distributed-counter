@@ -50,4 +50,12 @@ public class Count implements Comparable<Count>{
     public int hashCode() {
         return Objects.hash(id, countVal);
     }
+
+    @Override
+    public String toString() {
+        return "Count{" +
+                "id='" + id + '\'' +
+                ", countVal=" + countVal +
+                '}';
+    }
 }
