@@ -4,6 +4,7 @@ import org.berk.distributedcounter.api.Count;
 import org.berk.distributedcounter.counter.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -15,7 +16,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(path = "counter", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -31,28 +32,31 @@ public class CounterResource {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @PutMapping("/count/{id}")
-    public Mono<ResponseEntity<?>> increment(@NotEmpty(message = "Parameter 'id' is mandatory") @PathVariable("id") String counterId,
+    public Mono<ResponseEntity<Void>> increment(@NotEmpty(message = "Parameter 'id' is mandatory") @PathVariable("id") String counterId,
                                           @RequestParam(name = "amount", required = false) @Positive(message = "amount must be positive") Long amount) {
         log.debug("PUT /count/{} called", counterId);
-        return Mono.fromCallable(() -> {
-            Optional.ofNullable(amount).ifPresentOrElse(amountVal -> counter.increment(counterId, amountVal),
-                                                        () -> counter.increment(counterId));
-            return ResponseEntity.noContent().build();
-        });
+        return toCancellableMono(counter.incrementAsync(counterId, amount)
+                                        .thenApply(isNewRecord -> ResponseEntity.status(isNewRecord ? HttpStatus.CREATED
+                                                                                                    : HttpStatus.OK).build()));
     }
+
 
     @GetMapping("/count/{id}")
-    public Mono<Count> getCount(@NotEmpty(message = "Parameter 'id' is mandatory")
-                                    @PathVariable("id") String counterId) {
-        log.debug("GET /count/{} called", counterId);
-        return Mono.fromCallable(() -> counter.getCount(counterId));
+    public Mono<ResponseEntity<Long>> getCounter(@NotEmpty(message = "Parameter 'id' is mandatory")
+                                @PathVariable("id") String counterId) {
+        return toCancellableMono(counter.getCountAsync(counterId))
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.noContent().build());
     }
 
+
     @DeleteMapping("/count/{id}")
-    public Mono<Void> removeCount(@NotEmpty(message = "Parameter 'id' is mandatory")
+    public Mono<ResponseEntity<Long>> removeCounter(@NotEmpty(message = "Parameter 'id' is mandatory")
                             @PathVariable("id") String counterId) {
         log.debug("DELETE /count/{} called", counterId);
-        return Mono.fromRunnable(() -> counter.removeCounter(counterId));
+        return toCancellableMono(counter.removeAsync(counterId))
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/list")
@@ -68,5 +72,12 @@ public class CounterResource {
         return Mono.fromCallable(counter::getSize);
     }
 
+
+
+    private <T> Mono<T> toCancellableMono(CompletableFuture<T> completableFuture) {
+        return Mono.fromFuture(completableFuture)
+                .onErrorStop()
+                .doOnCancel(() -> completableFuture.cancel(false));
+    }
 }
 

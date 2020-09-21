@@ -16,7 +16,7 @@
         <dependency>
             <groupId>org.berk.distributedcounter</groupId>
             <artifactId>distributedcounter-api</artifactId>
-            <version>${project.parent.version}</version>
+            <version>0.1.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -20,35 +20,39 @@ public class HazelcastCounterTest extends HazelcastTest {
 
     @Test
     public void increment() {
-        String eventId = UUID.randomUUID().toString();
+        String countId = randomCountId();
         int count = 100;
-        IntStream.range(0, count).forEach(value ->  counter.increment(eventId));
-        assertEquals(count, counter.getCount(eventId).getCountVal());
+        IntStream.range(0, count).forEach(value ->  counter.incrementAsync(countId).join());
+        assertEquals(count, counter.getCountAsync(countId).join());
     }
 
     @Test
-    public void return_zero_for_non_existing_counter() {
-        assertEquals(0, counter.getCount(UUID.randomUUID().toString()).getCountVal());
+    public void return_null_for_non_existing_counter() {
+        assertNull(counter.getCountAsync(randomCountId()).join());
     }
+
+
 
     @Test
     public void handle_concurrency() throws Exception {
-        final int threads = 24;
-        final int eventCount = 3000;
+        final int eventCount = 50_000;
         String countIdPrefix = randomCountId();
-        ExecutorService executor = load(counter, threads, eventCount, countIdPrefix);
-        executor.shutdown();
-        executor.awaitTermination(10, SECONDS);
+        CompletableFuture<Void> loadFuture1 = load(counter, eventCount, countIdPrefix);
+        CompletableFuture<Void> loadFuture2 = load(counter, eventCount, countIdPrefix);
+        loadFuture1.join();
+        loadFuture2.join();
+        assertTrue(loadFuture1.isDone());
+        assertTrue(loadFuture2.isDone());
         //  should have correct values
-        IntStream.range(0, threads)
-                .forEach(value -> assertEquals(eventCount, counter.getCount(countIdPrefix + value).getCountVal()));
+        IntStream.range(0, eventCount)
+                .forEach(value -> assertEquals(2, counter.getCountAsync(countIdPrefix + value).join()));
     }
 
     @Test
     public void getSize() {
         int before = counter.getSize();
 
-        IntStream.range(0, 10).forEach(value -> counter.increment(randomCountId()));
+        IntStream.range(0, 10).forEach(value -> counter.incrementAsync(randomCountId()));
         assertEquals(10, counter.getSize() - before);
     }
 
@@ -60,7 +64,7 @@ public class HazelcastCounterTest extends HazelcastTest {
 
         int counterSize = 10;
         List<Count> expectedCounts = IntStream.range(0, counterSize).mapToObj(value ->  {
-            counter.increment("counter_" + value);
+            counter.incrementAsync("counter_" + value);
             return new Count("counter_" + value, 1L);
         }).collect(Collectors.toList());
 
@@ -81,7 +85,7 @@ public class HazelcastCounterTest extends HazelcastTest {
 
     @Test
     public void clear() {
-        counter.increment(randomCountId());
+        counter.incrementAsync(randomCountId());
         assertNotEquals(0, counter.getSize());
         counter.clear();
         assertEquals(0, counter.getSize());

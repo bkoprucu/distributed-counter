@@ -3,7 +3,6 @@ package org.berk.distributedcounter.rest;
 import com.fasterxml.classmate.GenericType;
 import org.berk.distributedcounter.api.Count;
 import org.berk.distributedcounter.counter.Counter;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +13,7 @@ import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,46 +23,82 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CounterResourceTest {
     @MockBean
-    Counter counter;
+    private Counter counter;
 
     @Autowired
     private WebTestClient webTestClient;
 
-    private static final GenericType<Count> COUNT_STRING_TYPE = new GenericType<>(){};
-
+    private final String countId = "existing";
+    private final String nonExistingCountId = "non_existing";
 
     @Test
-    public void increment() {
-        String counterId = "abc";
+    public void increment_returns_http_created_for_non_existing_countId() {
+        when(counter.incrementAsync(nonExistingCountId, null)).thenReturn(CompletableFuture.supplyAsync(() -> true));
         webTestClient.put()
-                .uri(uriBuilder -> uriBuilder.path("counter/count/{counterId}").build(counterId))
-        .exchange()
-        .expectStatus().isNoContent();
-        verify(counter).increment(counterId);
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(nonExistingCountId))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody().isEmpty();
+        verify(counter).incrementAsync(nonExistingCountId, null);
     }
 
     @Test
-    public void get_count() {
-        String counterId = "abc";
-        final Count count = new Count(counterId, 5L);
-        doReturn(count).when(counter).getCount(eq(counterId));
-        webTestClient.get()
-                .uri(uriBuilder -> uriBuilder.path("counter/count/{counterId}").build(counterId))
-                .accept(MediaType.APPLICATION_JSON)
+    public void increment_returns_http_ok_for_existing_countId() {
+        when(counter.incrementAsync(countId, null)).thenReturn(CompletableFuture.completedFuture(false));
+        webTestClient.put()
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(countId))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(Count.class).isEqualTo(count);
+                .expectBody().isEmpty();
+        verify(counter).incrementAsync(countId, null);
     }
 
 
     @Test
-    public void remove_counter() {
-        String counterId = "abc";
-        webTestClient.delete()
-                .uri(uriBuilder -> uriBuilder.path("counter/count/{counterId}").build(counterId))
+    public void get_count_should_return_http_204_for_non_existing_countId() {
+        when(counter.getCountAsync(nonExistingCountId)).thenReturn(CompletableFuture.completedFuture(null));
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(nonExistingCountId))
                 .exchange()
-                .expectStatus().is2xxSuccessful();
-        verify(counter).removeCounter(counterId);
+                .expectStatus().isNoContent()
+                .expectBody().isEmpty();
+        verify(counter).getCountAsync(nonExistingCountId);
+    }
+
+    @Test
+    public void get_count_should_return_count() {
+        Long expectedCount = 5L;
+        when(counter.getCountAsync(countId)).thenReturn(CompletableFuture.completedFuture(expectedCount));
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(countId))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().json(expectedCount.toString());
+        verify(counter).getCountAsync(countId);
+    }
+
+
+    @Test
+    public void remove_counter_should_return_http_204_for_non_existing_countId() {
+        when(counter.removeAsync(nonExistingCountId)).thenReturn(CompletableFuture.completedFuture(null));
+        webTestClient.delete()
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(nonExistingCountId))
+                .exchange()
+                .expectStatus().isNoContent()
+                .expectBody().isEmpty();
+        verify(counter).removeAsync(nonExistingCountId);
+    }
+
+    @Test
+    public void remove_counter_should_return_value_of_removed_item() {
+        Long expectedCount = 5L;
+        when(counter.removeAsync(countId)).thenReturn(CompletableFuture.completedFuture(expectedCount));
+        webTestClient.delete()
+                .uri(uriBuilder -> uriBuilder.path("counter/count/{countId}").build(countId))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().json(expectedCount.toString());
+        verify(counter).removeAsync(countId);
     }
 
     @Test

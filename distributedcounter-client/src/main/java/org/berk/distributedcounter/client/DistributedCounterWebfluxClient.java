@@ -1,6 +1,7 @@
 package org.berk.distributedcounter.client;
 
 import org.berk.distributedcounter.api.Count;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -34,30 +35,44 @@ public class DistributedCounterWebfluxClient {
     }
 
 
+    /**
+     * Get count
+     * @return  count, or null if a counter with countId doesn't exist
+     */
     public Mono<Long> getCount(String countId) {
         return webClient.get().uri(uriBuilder -> uriBuilder.path("/count/{id}").build(countId))
-                .retrieve().bodyToMono(Count.class).map(Count::getCountVal);
+                .retrieve().bodyToMono(Long.class);
     }
 
 
-    public Mono<ResponseEntity<Void>> increment(String countId) {
+    /**
+     * Incremet counter countId by one
+     * @return True if a new counter has been created, false otherwise.
+     */
+    public Mono<Boolean> increment(String countId) {
         return increment(countId, null);
     }
 
 
-    public Mono<ResponseEntity<Void>> increment(String countId, @Nullable Integer amount) {
+    /**
+     * Incremet counter countId by {@code amount}
+     * @return True if a new counter has been created, false otherwise.
+     */
+    public Mono<Boolean> increment(String countId, @Nullable Integer amount) {
         return webClient.put().uri(uriBuilder -> {
             uriBuilder.path("/count/{id}");
             Optional.ofNullable(amount).ifPresent(amnt -> uriBuilder.queryParam("amount", amnt));
             return uriBuilder.build(countId);
-        }).retrieve().toBodilessEntity();
+        }).retrieve()
+                       .toBodilessEntity()
+                       .map(responseEntity -> responseEntity.getStatusCode() == HttpStatus.CREATED);
     }
-
 
 
     public Flux<Count> getCounters() {
         return getCounters(null, null);
     }
+
 
     public Flux<Count> getCounters(@Nullable Integer fromIndex, @Nullable Integer itemCount) {
         return webClient.get().uri(uriBuilder -> {

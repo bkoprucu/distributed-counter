@@ -45,8 +45,17 @@ class DistributedCounterWebfluxClientTest {
     void getCount() {
         String countId = "event1";
         stubFor(get("/counter/count/" + countId).willReturn(aResponse().withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-                .withBody("{\"id\": \"" + countId + "\",\"countVal\": 5}")));
+                .withBody("5")));
         assertEquals(5, client.getCount(countId).block());
+    }
+
+    @Test
+    void getCount_will_return_null_for_non_existing_counter() {
+        String countId = "non_existing";
+        stubFor(get("/counter/count/" + countId).willReturn(aResponse().withHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                .withStatus(HttpStatus.NO_CONTENT.value())));
+        assertNull(client.getCount(countId).block());
+
     }
 
     @Test
@@ -69,10 +78,17 @@ class DistributedCounterWebfluxClientTest {
 
 
     @Test
-    void increment() {
-        String countId = "event2";
-        stubFor(put("/counter/count/" + countId).willReturn(aResponse().withStatus(204)));
-        assertEquals(204, client.increment(countId).block().getStatusCodeValue());
+    void increment_non_existing() {
+        String countId = "non_existing";
+        stubFor(put("/counter/count/" + countId).willReturn(aResponse().withStatus(HttpStatus.CREATED.value())));
+        assertTrue(client.increment(countId).block());
+    }
+
+    @Test
+    void increment_existing() {
+        String countId = "event1";
+        stubFor(put("/counter/count/" + countId).willReturn(aResponse()));
+        assertFalse(client.increment(countId).block());
     }
 
     @AfterAll

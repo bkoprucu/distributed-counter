@@ -1,0 +1,5 @@
+<configuration>
+
+    <logger name=" org.berk.distributedcounter" level="debug" />
+
+</configuration>

@@ -7,11 +7,13 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.awaitility.Durations.FIVE_SECONDS;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LocalCachingHazelcastCounterTest extends HazelcastTest {
 
@@ -25,50 +27,32 @@ public class LocalCachingHazelcastCounterTest extends HazelcastTest {
 
     @Test
     public void increment()  {
-        String eventId = UUID.randomUUID().toString();
-        int count = 100;
-        IntStream.range(0, count).forEach(value ->  counter.increment(eventId));
+        String countId = randomCountId();
+        int count = 10;
+        IntStream.range(0, count).forEach(value ->  counter.incrementAsync(countId).join());
         Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(5))
-                .until(() -> !counter.isSyncInProgress() && counter.getCount(eventId).getCountVal() > 0);
-        assertEquals(count, counter.getCount(eventId).getCountVal());
+                .until(() -> !counter.isSyncInProgress() && counter.getCountAsync(countId).join() != null);
+        assertEquals(count, counter.getCountAsync(countId).join());
     }
 
     @Test
-    public void should_return_zero_for_non_existing() {
-        assertEquals(0, counter.getCount(UUID.randomUUID().toString()).getCountVal());
+    public void getCountAsync_should_return_null_for_non_existing() {
+        assertNull(counter.getCountAsync(randomCountId()).join());
     }
 
 
     @Test
-    public void handle_concurrency() throws InterruptedException {
-        final int threads = 12;
-        final int eventCount = 250_000;
-
+    public void handle_concurrency_while_resetLocalMap_is_working() {
+        final int eventCount = 100_000;
         String prefix = randomCountId();
-        ExecutorService executor = load(counter, threads, eventCount, prefix);
-        executor.shutdown();
-        executor.awaitTermination(10, SECONDS);
-        counter.sync();
-        Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(10)).until(() ->
-                !counter.isSyncInProgress());
-        // All counters should have correct values
-        IntStream.range(0, threads)
-                .forEach(value -> assertEquals(eventCount, counter.getCount(prefix + value).getCountVal()));
-    }
-
-    @Test
-    public void resetLocalMap_under_load() throws Exception {
-        final int threads = 12;
-        final int eventCount = 250_000; //250 times more than HazelcastCounterManager
-        String prefix = randomCountId();
-        ExecutorService executor = load(counter, threads, eventCount, prefix);
+        CompletableFuture<Void> loadFuture = load(counter, eventCount, prefix);
         counter.resetLocalMap();
-        executor.shutdown();
-        executor.awaitTermination(10, SECONDS);
         counter.sync();
-        Awaitility.await().atMost(counter.getSyncInterval().multipliedBy(10)).until(() ->
+        Awaitility.await().atMost(FIVE_SECONDS).until(() ->
                 !counter.isSyncInProgress());
-        IntStream.range(0, threads)
-                .forEach(value -> assertEquals(eventCount, counter.getCount(prefix + value).getCountVal()));
+        loadFuture.join();
+        assertTrue(loadFuture.isDone());
+        IntStream.range(0, eventCount)
+                .forEach(value -> assertEquals(1, counter.getCountAsync(prefix + value).join()));
     }
 }

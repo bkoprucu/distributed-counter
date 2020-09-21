@@ -9,10 +9,8 @@ import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -81,15 +79,16 @@ public class LocalCachingHazelcastCounter extends HazelcastCounter {
     }
 
     @Override
-    public void increment(String counterId) {
+    public CompletableFuture<Boolean> incrementAsync(String counterId, Long amount) {
+        final long amnt = Optional.ofNullable(amount).orElse(1L);
         if (localCounterEnabled.get()) {
             // If there is no counter in the map, put 1 and return
-            final AtomicLong cnt = localMap.putIfAbsent(counterId, new AtomicLong(1L));
-            if (cnt != null) {
-                cnt.incrementAndGet();
-            }
+            return CompletableFuture.supplyAsync(() ->
+                    Optional.ofNullable(localMap.putIfAbsent(counterId, new AtomicLong(amnt)))
+                        .map(cnt -> { cnt.getAndIncrement(); return false; })
+                        .orElse(true));
         } else {
-            super.increment(counterId);
+            return super.incrementAsync(counterId, amnt);
         }
     }
 
@@ -108,12 +107,12 @@ public class LocalCachingHazelcastCounter extends HazelcastCounter {
      void sync() {
         if(syncInProgress.compareAndSet(false, true)) {
             try {
-                log.debug("sync() initiated");
+                log.debug("sync() started");
                 localMap.entrySet().stream().filter(entry -> entry.getValue().get() > 0).forEach(entry -> {
-                    final AtomicLong atomicLong = entry.getValue();
-                    final long count = atomicLong.get();
-                    hazelcastIncrementer.increment(entry.getKey(), count);
-                    atomicLong.addAndGet(-count);
+                    AtomicLong localCount = entry.getValue();
+                    long countVal = localCount.get();
+                    hazelcastIncrementer.increment(entry.getKey(), countVal).toCompletableFuture()
+                                        .thenApply(aLong -> localCount.addAndGet(-countVal)).join();
                 });
                 log.debug("sync() completed");
             } finally {
@@ -171,16 +170,16 @@ public class LocalCachingHazelcastCounter extends HazelcastCounter {
 
     @Override
     public void clear() {
-        log.warn("clear(): Removing all data!");
-        distributedMap.clear();
         localMap.clear();
+        super.clear();
     }
 
     @Override
-    public void removeCounter(String counterId) {
-        localMap.remove(counterId);
-        super.removeCounter(counterId);
+    public CompletableFuture<Long> removeAsync(String counterId) {
+        return super.removeAsync(counterId)
+                .thenApply(countVal -> {
+                    localMap.remove(counterId);
+                    return countVal;
+                });
     }
-
-
 }

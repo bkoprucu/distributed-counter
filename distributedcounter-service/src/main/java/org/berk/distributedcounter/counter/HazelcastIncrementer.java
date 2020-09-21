@@ -4,6 +4,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Atomic increment operations on Hazelcast IMap
@@ -14,7 +15,7 @@ import java.util.Optional;
 class HazelcastIncrementer<T> {
     private final IMap<T, Long> distributedMap;
 
-    // EntryProcessor for incrementing one by one
+    // EntryProcessor for incrementing by one
     private final EntryProcessor<T, Long, Long> singleIncrementer;
 
     HazelcastIncrementer(IMap<T, Long> distributedMap) {
@@ -24,15 +25,17 @@ class HazelcastIncrementer<T> {
                 .orElseGet(() -> entry.setValue(1L));
     }
 
-    void increment(T eventId) {
-        distributedMap.executeOnKey(eventId, singleIncrementer);
-    }
 
-    void increment(T eventId, long amount) {
-        distributedMap.executeOnKey(eventId,
+    CompletableFuture<Long> increment(T eventId, Long amount) {
+        if(amount == null || amount.equals(1L)) {
+            return distributedMap.submitToKey(eventId, singleIncrementer)
+                    .toCompletableFuture();
+        }
+        return distributedMap.submitToKey(eventId,
                 entry -> Optional.ofNullable(entry.getValue())
                         .map(v -> entry.setValue(v + amount))
-                        .orElseGet(() -> entry.setValue(amount)));
+                        .orElseGet(() -> entry.setValue(amount)))
+                .toCompletableFuture();
     }
 
 }

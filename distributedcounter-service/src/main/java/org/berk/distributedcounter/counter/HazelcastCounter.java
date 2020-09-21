@@ -1,12 +1,15 @@
 package org.berk.distributedcounter.counter;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import org.berk.distributedcounter.api.Count;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 
@@ -24,24 +27,24 @@ public class HazelcastCounter implements Counter {
     protected final IMap<String, Long> distributedMap;
     protected final HazelcastIncrementer<String> hazelcastIncrementer;
 
+    protected final EntryProcessor<String, Long, Long> entryRemover;
+
     public HazelcastCounter(HazelcastInstance hazelcastInstance) {
         distributedMap = hazelcastInstance.getMap(MAP_NAME);
         hazelcastIncrementer = new HazelcastIncrementer<>(distributedMap);
+        entryRemover = entry -> entry.setValue(null);
     }
 
-    @Override
-    public void increment(String counterId) {
-        hazelcastIncrementer.increment(counterId);
-    }
 
     @Override
-    public void increment(String counterId, long amount) {
-        hazelcastIncrementer.increment(counterId, amount);
+    public CompletableFuture<Boolean> incrementAsync(String counterId, Long amount) {
+        return hazelcastIncrementer.increment(counterId, amount).thenApply(Objects::isNull);
     }
 
+
     @Override
-    public Count getCount(String counterId) {
-        return new Count(counterId, distributedMap.getOrDefault(counterId, 0L));
+    public CompletableFuture<Long> getCountAsync(String counterId) {
+        return distributedMap.getAsync(counterId).toCompletableFuture();
     }
 
     @Override
@@ -58,14 +61,11 @@ public class HazelcastCounter implements Counter {
 
     /** @inheritDoc */
     @Override
-    public void removeCounter(String counterId) {
+    public CompletableFuture<Long> removeAsync(String counterId) {
         log.info("Removing counter: {}", counterId);
-        distributedMap.delete(counterId);
+        return distributedMap.submitToKey(counterId, entryRemover).toCompletableFuture();
     }
 
-    /**
-     * @return Item count, how many count
-     */
     @Override
     public int getSize() {
         return distributedMap.size();
