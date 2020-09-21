@@ -1,102 +1,112 @@
 package org.berk.distributedcounter.client;
 
-import org.awaitility.Awaitility;
 import org.berk.distributedcounter.api.Count;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
-import static org.awaitility.Durations.FIVE_HUNDRED_MILLISECONDS;
 import static org.awaitility.Durations.ONE_SECOND;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 public class DistributedCounterClientTest {
+    private static final Logger log = LoggerFactory.getLogger(DistributedCounterClientTest.class);
+    private static final DistributedCounterWebfluxClient client = new DistributedCounterWebfluxClient("http://localhost:8080");
 
-    private static final String SERVER_HOST = "localhost";
-    private static final int SERVER_PORT = 8080;
-
-    private static final DistributedCounterApacheClient client = DistributedCounterApacheClient.newClient(
-            SERVER_HOST, SERVER_PORT, 250, 1000, 8);
-
-
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private String generateCountId() {
+        return "test_" + System.nanoTime();
+    }
 
 
     @Test
-    public void shouldIncrementAndRead() {
-        final int count = 10;
-        String eventId = generateEventIdPrefix();
-        IntStream.range(0, count).forEach(i -> client.increment(eventId));
-
-        await().atMost(3, SECONDS).until(() -> count == client.getCount(eventId));
-        assertEquals(count, client.getCount(eventId));
+    void should_handle_empty_result() {
+        assertNull(client.getCount(generateCountId()).block());
     }
 
     @Test
-    public void shouldGetListAndListCount() {
-        int beginWith = client.getListSize();
-        final int count = 100;
-        String eventIdPrefix = generateEventIdPrefix();
-        List<String> eventIdList = new ArrayList<>(count);
-        IntStream.range(0, count).forEach(i -> eventIdList.add(eventIdPrefix + UUID.randomUUID().toString()));
+    public void should_increment_and_get() {
+        long count = 10;
+        String countId = generateCountId();
+        log.info(() -> "Incrementing counter: " + countId);
+        List<Mono<Boolean>> monos = LongStream.range(0, count).mapToObj(i -> client.increment(countId)).collect(Collectors.toList());
+        Mono.when(monos).block();
+        System.out.println(
+                client.getCount(countId).block()
+        );
+        //await().atMost(2, SECONDS).until(() -> Objects.equals(count, client.getCount(countId).block()));
+    }
 
-        eventIdList.forEach(client::increment);
 
-        await().atMost(10, SECONDS).until(() -> count + beginWith == client.getListSize());
-        List<Count<String>> countList = client.getCounters();
-        assertEquals(count + beginWith, countList.size());
+    @Test
+    void should_get_list_size() {
+        Integer listSize = client.getListSize().block();
+        assertNotNull(listSize);
+        client.increment(generateCountId()).block();
+        await().atMost(ONE_SECOND).until(() -> client.getListSize().block() == listSize + 1);
+    }
 
-        if(beginWith == 0) {
-            countList.forEach(eventCount -> {
-                assertTrue(eventIdList.contains(eventCount.getId()));
-                assertEquals(1L, eventCount.getCountVal().longValue());
-            });
-        }
+
+    public Long load(int numberOfCounters, int incrementBy, Duration requestDelay, Duration timeOut) throws InterruptedException {
+        String countIdPrefix = generateCountId();
+        final int expectedRequestCount = numberOfCounters * incrementBy;
+        CountDownLatch completedLatch = new CountDownLatch(expectedRequestCount);
+        AtomicInteger errorCount = new AtomicInteger();
+        log.info(() ->"Incrementing " + numberOfCounters + " counters having prefix '" + countIdPrefix + "' by " + incrementBy);
+
+        Instant startTime = Instant.now();
+        Flux.fromStream(IntStream.range(0, incrementBy)
+                .mapToObj(i -> IntStream.rangeClosed(1, numberOfCounters).mapToObj(j -> countIdPrefix + "_" + j))
+                .flatMap(s -> s))
+                .delayElements(requestDelay)
+                .subscribe(countId -> client.increment(countId).subscribe(
+                        null,
+                        error -> { completedLatch.countDown();
+                            log.error(error, () -> "Increment failed for countId: " + countId);
+                            errorCount.incrementAndGet();},
+                        completedLatch::countDown));
+
+        completedLatch.await(3, MINUTES);
+        long processingDuration = Duration.between(startTime, Instant.now()).toMillis();
+        long reqPerSec = expectedRequestCount * 1000 /  processingDuration;
+        log.info(() ->"Counting took " + processingDuration + " ms.(" + reqPerSec + " req./sec)");
+
+        await().atMost(30, SECONDS).until(() ->
+                numberOfCounters == client.getCounters()
+                        .filter(count -> count.getId().startsWith(countIdPrefix) && count.getCountVal().equals((long) incrementBy))
+                        .collectList().block().size()
+        );
+        log.info(() -> "Verification/sync  completed");
+
+        return reqPerSec;
     }
 
     @Test
-    public void shouldHandleLoad() throws Exception {
-        final int threads = 8;
-        final int events = 10000;
-        String prefix = generateEventIdPrefix();
-        long duration = applyLoad(threads, events, prefix);
-        log.info(() -> "Performance: " + threads * events * 1000 / duration + " requests / second\n");
-        Awaitility.await().pollDelay(ONE_SECOND).pollInterval(FIVE_HUNDRED_MILLISECONDS)
-                .until(() -> events == client.getCount(prefix + "_1"));
-        IntStream.range(0, threads).forEach(threadId -> assertEquals(events, client.getCount(prefix + "_" + threadId)));
+    void handle_load() throws InterruptedException {
+        load(3, 1000, Duration.ofNanos(1000), Duration.ofMinutes(3));
+        load(3, 10000, Duration.ofNanos(250), Duration.ofMinutes(3));
+        load(300, 300, Duration.ofNanos(200), Duration.ofMinutes(3));
     }
 
-    private long applyLoad(int threads, int events, String prefix) throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
-        long start = System.currentTimeMillis();
-        IntStream.range(0, threads).forEach(threadId ->
-                    executor.submit(() -> IntStream.range(0, events).forEach(eventNo ->
-                            client.increment(prefix + '_' + threadId)
-                    )));
-        executor.shutdown();
-        executor.awaitTermination(30, SECONDS);
-        return System.currentTimeMillis() - start;
+    @Test
+    public void should_get_list()  {
+        List<Count> collect = client.getCounters().collect(Collectors.toList()).block();
+
     }
 
 
-    private static String generateEventIdPrefix() {
-        return "counter_" + System.nanoTime();
-    }
-
-    @AfterAll
-    public static void tearDown() throws Exception {
-        client.close();
-    }
 }
