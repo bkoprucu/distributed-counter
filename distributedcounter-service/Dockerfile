@@ -7,6 +7,7 @@ RUN java -Djarmode=layertools -jar app.jar extract
 
 ###
 FROM adoptopenjdk:11-jre-hotspot
+USER nobody
 # Rest port
 EXPOSE 8080/tcp
 

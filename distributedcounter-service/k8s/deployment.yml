@@ -6,7 +6,7 @@ metadata:
     app: distributedcounter-app
 
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: distributedcounter-app
@@ -27,27 +27,29 @@ spec:
           env:
             - name: spring_profiles_active
               value: kubernetes
+            - name: JAVA_OPTS
+              value: "-Xms256M -Xmx1G"
           livenessProbe: # will restart if fails
             httpGet:
               port: service-port
               path: /actuator/health/liveness
-            initialDelaySeconds: 50
-            timeoutSeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 60
+            timeoutSeconds: 3
+            periodSeconds: 10
             failureThreshold: 3
           readinessProbe:
             httpGet:
               port: service-port
               path: /actuator/health/readiness
-            initialDelaySeconds: 30
-            timeoutSeconds: 10
+            initialDelaySeconds: 40
+            timeoutSeconds: 3
             periodSeconds: 5
-            failureThreshold: 3
-  strategy:
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 2
-  minReadySeconds: 10
+            failureThreshold: 1
+          resources:
+            requests:
+              memory: 256M
+            limits:
+              memory: 1024M
 
 
 ---
@@ -65,6 +67,6 @@ spec:
   ports:
     - port: 5701
       name: hazelcast
-    - port: 8080
+    - port: 80
       name: service
       targetPort: 8080

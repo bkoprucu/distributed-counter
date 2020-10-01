@@ -1,6 +1,5 @@
 package org.berk.distributedcounter.rest;
 
-import com.fasterxml.classmate.GenericType;
 import org.berk.distributedcounter.api.Count;
 import org.berk.distributedcounter.counter.Counter;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
