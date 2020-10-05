@@ -2,7 +2,6 @@ package org.berk.distributedcounter.client;
 
 import org.berk.distributedcounter.api.Count;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.Nullable;
@@ -15,7 +14,7 @@ import java.util.Optional;
 public class DistributedCounterWebfluxClient {
 
     private final WebClient webClient;
-
+    private final String baseUrl;
 
     /**
      * Creates new client with custom {@code ClientHttpConnector}
@@ -23,7 +22,8 @@ public class DistributedCounterWebfluxClient {
      * @param clientHttpConnector customized {@link ClientHttpConnector} instance
      */
     public DistributedCounterWebfluxClient(String serviceHost, ClientHttpConnector clientHttpConnector) {
-        webClient = WebClient.builder().baseUrl(serviceHost.concat("/counter")).clientConnector(clientHttpConnector).build();
+        baseUrl = serviceHost.concat("/counter");
+        webClient = WebClient.builder().baseUrl(baseUrl).clientConnector(clientHttpConnector).build();
     }
 
     /**
@@ -86,5 +86,22 @@ public class DistributedCounterWebfluxClient {
 
     public Mono<Integer> getListSize() {
         return webClient.get().uri("/listsize").retrieve().bodyToMono(Integer.class);
+    }
+
+
+    public Mono<Long> removeCounter(String countId) {
+        return webClient.delete()
+                .uri(uriBuilder -> uriBuilder.path("/count/{id}").build(countId))
+                .retrieve()
+                .bodyToMono(Long.class);
+    }
+
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public WebClient getWebClient() {
+        return webClient;
     }
 }

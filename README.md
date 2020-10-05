@@ -15,7 +15,7 @@ An alternative counter; [`LocalCachingHazelcastCounter`](distributedcounter-serv
 
 REST api is placed in a separate module "[distributedcounter-api](distributedcounter-api)"   
 
-Integration tests are in a separate project: [distributedcounter-integrationtest](distributedcounter-integrationtest)
+Sample command line app, demonstrating usage of the client, with load/performance testing capabilities: [distributedcounter-testapp](distributedcounter-testapp)
 
     
 ## Configuring and running
