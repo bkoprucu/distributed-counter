@@ -33,7 +33,7 @@ public class Main {
         CMDLINE_OPTS.addOption("h", "help", false, "Show  help");
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         Main main = new Main();
         try {
             TestArgs testArgs = main.parseCmdlineArgs(args);
