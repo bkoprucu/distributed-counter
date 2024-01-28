@@ -1,6 +1,7 @@
 package org.berk.distributedcounter;
 
-import org.springframework.boot.autoconfigure.web.ResourceProperties;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -18,7 +19,6 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-import javax.validation.ConstraintViolationException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,8 +36,8 @@ public class CustomExceptionHandler extends AbstractErrorWebExceptionHandler {
 
     private final ErrorAttributeOptions defaultErrorAttributeOptions;
 
-    public CustomExceptionHandler(ErrorAttributes errorAttributes, ResourceProperties resourceProperties, ApplicationContext applicationContext, ServerCodecConfigurer serverCodecConfigurer) {
-        super(errorAttributes, resourceProperties, applicationContext);
+    public CustomExceptionHandler(ErrorAttributes errorAttributes, WebProperties webProperties, ApplicationContext applicationContext, ServerCodecConfigurer serverCodecConfigurer) {
+        super(errorAttributes, webProperties.getResources(), applicationContext);
         defaultErrorAttributeOptions = ErrorAttributeOptions.of(ErrorAttributeOptions.Include.MESSAGE, ErrorAttributeOptions.Include.EXCEPTION);
         setMessageWriters(serverCodecConfigurer.getWriters());
         setMessageReaders(serverCodecConfigurer.getReaders());

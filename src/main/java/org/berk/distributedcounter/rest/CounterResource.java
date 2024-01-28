@@ -1,5 +1,6 @@
 package org.berk.distributedcounter.rest;
 
+import jakarta.validation.constraints.Positive;
 import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.counter.HazelcastCounterProperties;
 import org.berk.distributedcounter.rest.api.EventCount;
@@ -20,7 +21,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import javax.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.Map;

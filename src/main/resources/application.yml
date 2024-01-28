@@ -2,7 +2,12 @@ management:
   endpoints:
     web.exposure.include: "*"
     enabled-by-default: true
-  info.build.enabled: true
+  endpoint:
+    env:
+      keys-to-sanitize: "password,secret"
+      show-values: ALWAYS
+    info:
+      build.enabled: true
 
   health:
     readinessstate:

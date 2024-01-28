@@ -5,25 +5,25 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.4.RELEASE</version>
+        <version>3.2.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <groupId>org.berk</groupId>
     <artifactId>distributed-counter</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>distributed-counter</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
-        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
+        <java.version>21</java.version>
+        <spring-cloud.version>2023.0.0</spring-cloud.version>
 
-        <hazelcast.version>4.0.2</hazelcast.version>
-        <hazelcast-kubernetes.version>2.0.2</hazelcast-kubernetes.version>
-        <logstash-logback-encoder.version>6.4</logstash-logback-encoder.version>
+        <hazelcast.version>5.3.6</hazelcast.version>
+        <hazelcast-kubernetes.version>2.2.3</hazelcast-kubernetes.version>
+        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     </properties>
 
 
@@ -69,8 +69,9 @@
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-kubernetes-config</artifactId>
+            <artifactId>spring-cloud-starter-kubernetes-fabric8-config</artifactId>
         </dependency>
+
 
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -94,7 +95,18 @@
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.jayway.jsonpath</groupId>
+                    <artifactId>json-path</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.9.0</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -115,7 +127,42 @@
                     <layers>
                         <enabled>true</enabled>
                     </layers>
+                    <excludeDevtools>true</excludeDevtools>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <id>enforce-java</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                    <message>Your Java version is: ${java.runtime.version}. This requires Java ${java.version}</message>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>3.8</version>
+                                    <message>Upgrade maven to 3.8+ or use mvnw</message>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

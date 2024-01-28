@@ -5,9 +5,6 @@ import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-
 public interface Counter {
 
     /**

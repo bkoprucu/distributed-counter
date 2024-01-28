@@ -1,7 +1,6 @@
 package org.berk.distributedcounter.counter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.lang.Nullable;
 
 
@@ -9,7 +8,6 @@ import org.springframework.lang.Nullable;
  * External configuration class for the counter
  */
 @ConfigurationProperties(prefix = "hazelcastcounter")
-@ConstructorBinding
 public class HazelcastCounterProperties {
 
     private static final String DEFAULT_INSTANCE_NAME = "distributedcounter";
