@@ -37,7 +37,7 @@ spec:
             httpGet:
               port: service-port
               path: /actuator/health/liveness
-            initialDelaySeconds: 60
+            initialDelaySeconds: 30
             timeoutSeconds: 3
             periodSeconds: 10
             failureThreshold: 3
@@ -45,7 +45,7 @@ spec:
             httpGet:
               port: service-port
               path: /actuator/health/readiness
-            initialDelaySeconds: 40
+            initialDelaySeconds: 15
             timeoutSeconds: 3
             periodSeconds: 5
             failureThreshold: 1
@@ -67,8 +67,26 @@ spec:
   selector:
     app: distributedcounter-app
   ports:
-    - port: 5701 # To access Hazelcast cluster from the outside
-      name: hazelcast
+    # Enable below port and disable ClusterIP service to access Hazelcast from the outside
+    #- port: 5701
+    #  name: hazelcast
     - port: 8080
       name: service
       targetPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: distributedcounter-hazelcast-service # Should match with the value set in HazelcastConfigBuilder.withKubernetesDiscovery()
+  labels:
+    app: distributedcounter-app
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: distributedcounter-app
+  ports:
+    - port: 5701
+      name: hazelcast

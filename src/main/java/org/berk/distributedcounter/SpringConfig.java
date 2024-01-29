@@ -39,7 +39,7 @@ public class SpringConfig {
                 new HazelcastConfigBuilder(counterProperties.instanceName(), counterProperties.clusterName());
         if (Stream.of(environment.getActiveProfiles()).anyMatch(profile -> profile.equalsIgnoreCase("kubernetes"))) {
             log.info("Configuring Hazelcast for Kubernetes discovery");
-            return configBuilder.withKubernetesDiscovery()
+            return configBuilder.withKubernetesDiscovery(counterProperties.kubernetesServiceName(), null)
                                 .getConfig();
         }
         log.info("Configuring Hazelcast for multicast discovery");

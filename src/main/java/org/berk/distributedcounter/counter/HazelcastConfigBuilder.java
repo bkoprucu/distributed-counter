@@ -5,6 +5,7 @@ import com.hazelcast.config.JoinConfig;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 
 public final class HazelcastConfigBuilder {
@@ -47,12 +48,16 @@ public final class HazelcastConfigBuilder {
         return this;
     }
 
-    public HazelcastConfigBuilder withKubernetesDiscovery() {
+    public HazelcastConfigBuilder withKubernetesDiscovery(String serviceName, @Nullable String nameSpace) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig()
                   .setEnabled(false);
         joinConfig.getKubernetesConfig()
-                  .setEnabled(true);
+                  .setEnabled(true)
+                  .setProperty("service-name", Objects.requireNonNull(serviceName));
+        if(nameSpace != null) {
+            joinConfig.getKubernetesConfig().setProperty("namespace", nameSpace);
+        }
         return this;
     }
 

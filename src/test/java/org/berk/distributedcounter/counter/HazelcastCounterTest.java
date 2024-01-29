@@ -19,7 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class HazelcastCounterTest {
     private final HazelcastCounterProperties counterProperties =
-            new HazelcastCounterProperties("testInstance", "testCluster", null);
+            new HazelcastCounterProperties("testInstance",
+                                           "testCluster",
+                                           null,
+                                           null);
 
 
     private final HazelcastInstance hazelcastInstance =

@@ -54,7 +54,7 @@ public class HazelcastCounter implements Counter {
         }
 
         // Atomically check for requestId for deduplication / idempotency
-        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
+        if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.deduplicationMapTimeoutSecs(), SECONDS) == null) {
             CompletionStage<Long> completionStage =
                 distributedMap.submitToKey(eventId, amnt == 1
                         ? incrementByOneProcessor
@@ -92,7 +92,7 @@ public class HazelcastCounter implements Counter {
     public Mono<Void> remove(String eventId, String requestId) {
         return Mono.fromRunnable(() -> {
             // Atomically check for requestId for deduplication / idempotency
-            if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.getDeduplicationMapTimeOutSecs(), SECONDS) == null) {
+            if (requestId == null || requestIdMap.putIfAbsent(requestId, true, counterProperties.deduplicationMapTimeoutSecs(), SECONDS) == null) {
                 log.info("Removing counter: {} with value: {}", eventId, distributedMap.remove(eventId));
             } else {
                 log.info("Duplicate remove request for eventId: {}.  with requestId: {}", eventId, requestId);
