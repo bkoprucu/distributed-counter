@@ -3,6 +3,7 @@ package org.berk.distributedcounter.rest;
 import com.hazelcast.core.HazelcastInstance;
 import org.berk.distributedcounter.counter.Counter;
 import org.berk.distributedcounter.rest.api.EventCount;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.blockhound.BlockHound;
 
 import java.util.stream.Stream;
 
@@ -36,6 +38,10 @@ public class CounterResourceTest {
     private final String eventId = "abc";
     private final String nonExistingEventId = "non_existing";
 
+    @BeforeAll
+    static void beforeAll() {
+        BlockHound.install();
+    }
 
     @Test
     public void shouldReturnHttpOkForIncrementingExistingCounter() {
