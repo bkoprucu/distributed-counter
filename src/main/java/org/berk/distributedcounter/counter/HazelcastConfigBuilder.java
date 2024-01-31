@@ -7,7 +7,7 @@ import org.springframework.lang.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-
+// With version 5.x of Hazelcast, it makes more sense to use the external configuration file hazelcast.yml instead
 public final class HazelcastConfigBuilder {
 
     private final Config config;
@@ -24,10 +24,15 @@ public final class HazelcastConfigBuilder {
         config.getExecutorConfig("distributedCounter_executor")
               .setPoolSize(Runtime.getRuntime().availableProcessors());
 
-        if(port != null) {
+        if(port != null) { // Default port is 5701
             config.getNetworkConfig()
                   .setPort(port);
         }
+    }
+
+    public HazelcastConfigBuilder withMapExpiration(String mapName, int maxIdleSeconds) {
+        config.getMapConfig(mapName).setMaxIdleSeconds(maxIdleSeconds);
+        return this;
     }
 
     public HazelcastConfigBuilder withStaticTcpDiscovery(List<String> members) {

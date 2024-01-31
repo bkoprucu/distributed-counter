@@ -6,8 +6,6 @@ management:
     env:
       keys-to-sanitize: "password,secret"
       show-values: ALWAYS
-    info:
-      build.enabled: true
 
   health:
     readinessstate:

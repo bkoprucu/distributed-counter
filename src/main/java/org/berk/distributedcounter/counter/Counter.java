@@ -1,29 +1,25 @@
 package org.berk.distributedcounter.counter;
 
 import org.berk.distributedcounter.rest.api.EventCount;
-import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import jakarta.annotation.Nullable;
+
 
 public interface Counter {
 
-    /**
-     * Increment counter {@code eventId} by one
-     * @param eventId    Counter to increment
-     * @param requestId  Unique id for idempotency, can be null
-     * @return Former value of the counter, or null if there wasn't a counter
-     */
-    Mono<Long> incrementAsync(String eventId, String requestId);
+    default Mono<Long> incrementAsync(String eventId, @Nullable String requestId) {
+        return incrementAsync(eventId, 1, requestId);
+    }
 
 
     /**
      * Increment counter {@code eventId} by given {@code amount}
      * @param eventId    Counter to increment
-     * @param amount     Increment by how much, can be null, defaults to 1
      * @param requestId  Unique id for idempotency, can be null
      * @return Former value of the counter, or null if there wasn't a counter
      */
-    Mono<Long> incrementAsync(String eventId, @Nullable Integer amount, @Nullable String requestId);
+    Mono<Long> incrementAsync(String eventId, Integer amount, @Nullable String requestId);
 
     /**
      * Remove counter {@code eventId}

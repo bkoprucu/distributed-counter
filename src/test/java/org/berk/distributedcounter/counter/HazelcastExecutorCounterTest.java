@@ -1,7 +1,5 @@
 package org.berk.distributedcounter.counter;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.berk.distributedcounter.rest.api.EventCount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,28 +9,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 
-public class HazelcastCounterTest {
-    private final HazelcastCounterProperties counterProperties =
-            new HazelcastCounterProperties("testInstance",
-                                           "testCluster",
-                                           null,
-                                           null);
+public class HazelcastExecutorCounterTest extends HazelcastTest {
 
-
-    private final HazelcastInstance hazelcastInstance =
-            HazelcastInstanceFactory.getOrCreateHazelcastInstance(
-                    new HazelcastConfigBuilder(counterProperties.instanceName(),
-                                               counterProperties.clusterName())
-                            .withMulticastDiscovery()
-                            .getConfig());
-
-    private final HazelcastCounter counter = new HazelcastCounter(hazelcastInstance, counterProperties);
+    private final Deduplicator deduplicator = new Deduplicator(hazelcastInstance);
+    private final HazelcastExecutorCounter counter = new HazelcastExecutorCounter(hazelcastInstance, deduplicator);
 
     private final String eventId = "testEventId";
     private final String nonExistingEventId = "nonExistingEventId";
@@ -40,6 +25,7 @@ public class HazelcastCounterTest {
     @BeforeEach
     public void setUp()  {
         counter.clear();
+        deduplicator.reset();
         assertNull(counter.getCountAsync(eventId).block());
         assertNull(counter.getCountAsync(nonExistingEventId).block());
     }
@@ -52,23 +38,23 @@ public class HazelcastCounterTest {
 
     @Test
     public void shouldIncrementByOne()  {
-        long count = 10L;
-        LongStream.range(0, count).forEach(value -> counter.incrementAsync(eventId, null));
-        assertEquals(count, counter.getCountAsync(eventId).block());
+        assertEquals(0, counter.incrementAsync(eventId, null).block());
+        assertEquals(1, counter.incrementAsync(eventId, null).block());
+        assertEquals(2, counter.getCountAsync(eventId).block());
     }
 
     @Test
     public void shouldIncrementByOneWhenAmountIsNull() {
-        counter.incrementAsync(eventId, null, null);
+        assertEquals(0, counter.incrementAsync(eventId, null, null).block());
         assertEquals(1L, counter.getCountAsync(eventId).block());
     }
 
     @Test
     public void shouldIncrementByGivenAmount() {
-        long count = 10L;
-        int amount = 2;
-        LongStream.range(0, count).forEach(value -> counter.incrementAsync(eventId, amount, null));
-        assertEquals(count * amount, counter.getCountAsync(eventId).block());
+        final int delta = 5;
+        assertEquals(0, counter.incrementAsync(eventId, delta, null).block());
+        assertEquals(5, counter.incrementAsync(eventId, delta, null).block());
+        assertEquals(10, counter.getCountAsync(eventId).block());
     }
 
     @Test

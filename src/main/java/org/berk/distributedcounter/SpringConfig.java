@@ -3,8 +3,9 @@ package org.berk.distributedcounter;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import org.berk.distributedcounter.counter.Counter;
+import org.berk.distributedcounter.counter.Deduplicator;
 import org.berk.distributedcounter.counter.HazelcastConfigBuilder;
-import org.berk.distributedcounter.counter.HazelcastCounter;
+import org.berk.distributedcounter.counter.HazelcastExecutorCounter;
 import org.berk.distributedcounter.counter.HazelcastCounterProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,8 @@ public class SpringConfig {
 
     @Bean
     @Lazy(false)
-    Counter counter(HazelcastInstance hazelcastInstance, HazelcastCounterProperties counterProperties) {
-        Counter counter = new HazelcastCounter(hazelcastInstance, counterProperties);
+    Counter counter(HazelcastInstance hazelcastInstance, Deduplicator deduplicator) {
+        Counter counter = new HazelcastExecutorCounter(hazelcastInstance, deduplicator);
         log.info("Configured Counter implementation: {}", counter.getClass().getSimpleName());
         return counter;
     }
@@ -36,7 +37,9 @@ public class SpringConfig {
     @Lazy(false)
     Config hazelcastConfig(Environment environment, HazelcastCounterProperties counterProperties) {
         HazelcastConfigBuilder configBuilder =
-                new HazelcastConfigBuilder(counterProperties.instanceName(), counterProperties.clusterName());
+                new HazelcastConfigBuilder(counterProperties.instanceName(), counterProperties.clusterName())
+                        .withMapExpiration(HazelcastCounterProperties.DEDUPLICATION_MAP_NAME,
+                                           counterProperties.deduplicationMapTimeoutSecs());
         if (Stream.of(environment.getActiveProfiles()).anyMatch(profile -> profile.equalsIgnoreCase("kubernetes"))) {
             log.info("Configuring Hazelcast for Kubernetes discovery");
             return configBuilder.withKubernetesDiscovery(counterProperties.kubernetesServiceName(), null)
