@@ -16,13 +16,10 @@ import static java.util.Objects.requireNonNullElse;
 
 /**
  * Counters based on {@link EntryProcessor}, to test EntryProcessor behavior
- *
- * It makes more sense to implement this using {@link PNCounter}
- *
  */
-public class HazelcastExecutorCounter implements Counter {
+public class HazelcastEntryProcessorCounter implements Counter {
 
-    private static final Logger log = LoggerFactory.getLogger(HazelcastExecutorCounter.class);
+    private static final Logger log = LoggerFactory.getLogger(HazelcastEntryProcessorCounter.class);
 
     // Keeping counters
     private final IMap<String, Long> distributedMap;
@@ -36,7 +33,7 @@ public class HazelcastExecutorCounter implements Counter {
                                     : entry.getValue() + 1L), 0L);
 
 
-    public HazelcastExecutorCounter(HazelcastInstance hazelcastInstance, Deduplicator deduplicator) {
+    public HazelcastEntryProcessorCounter(HazelcastInstance hazelcastInstance, Deduplicator deduplicator) {
         this.distributedMap = hazelcastInstance.getMap("CounterMap");
         this.deduplicator = deduplicator;
     }

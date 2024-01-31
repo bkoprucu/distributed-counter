@@ -19,8 +19,10 @@ public final class Deduplicator {
 
     private final IMap<String, Boolean> requestIdMap;
 
+    public static final String DEDUPLICATION_MAP_NAME = "RequestIdMap";
+
     public Deduplicator(HazelcastInstance hazelcastInstance) {
-        this.requestIdMap = hazelcastInstance.getMap("RequestIdMap");
+        this.requestIdMap = hazelcastInstance.getMap(DEDUPLICATION_MAP_NAME);
     }
 
     /**

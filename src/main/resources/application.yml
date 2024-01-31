@@ -19,3 +19,4 @@ logging.level:
 hazelcastcounter:
   cluster-name: "counter-cluster"
   kubernetes-service-name: "distributedcounter-hazelcast-service" # Should match the service in deployment.yml
+  implementation-class-name: "HazelcastPNCounter"

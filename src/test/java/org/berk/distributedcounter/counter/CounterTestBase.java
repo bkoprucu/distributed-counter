@@ -13,27 +13,25 @@ import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+public abstract class CounterTestBase <T extends Counter> extends HazelcastTest {
+    protected T counter;
 
-public class HazelcastExecutorCounterTest extends HazelcastTest {
+    protected abstract T createInstance();
 
-    private final Deduplicator deduplicator = new Deduplicator(hazelcastInstance);
-    private final HazelcastExecutorCounter counter = new HazelcastExecutorCounter(hazelcastInstance, deduplicator);
+    protected final Deduplicator deduplicator = new Deduplicator(hazelcastInstance);
 
-    private final String eventId = "testEventId";
-    private final String nonExistingEventId = "nonExistingEventId";
+    protected final String eventId = "testEventId";
+
 
     @BeforeEach
-    public void setUp()  {
-        counter.clear();
+    public void setUp() {
+        counter = createInstance();
+        switch (counter) {
+            case HazelcastEntryProcessorCounter hec -> hec.clear();
+            case HazelcastPNCounter hpc -> hpc.clear();
+            default -> throw new IllegalStateException("Unexpected value: " + counter);
+        }
         deduplicator.reset();
-        assertNull(counter.getCountAsync(eventId).block());
-        assertNull(counter.getCountAsync(nonExistingEventId).block());
-    }
-
-
-    @Test
-    public void shouldReturnNullForNonExisting()  {
-        assertNull(counter.getCountAsync(nonExistingEventId).block());
     }
 
     @Test
@@ -86,8 +84,8 @@ public class HazelcastExecutorCounterTest extends HazelcastTest {
     @Test
     public void shouldReturnSize() {
         assertEquals(0, counter.getSize().block());
-        counter.incrementAsync("one", null);
-        counter.incrementAsync("two", null);
+        counter.incrementAsync("one", null).block();
+        counter.incrementAsync("two", null).block();
         assertEquals(2, counter.getSize().block());
         counter.remove("one", null).block();
         assertEquals(1, counter.getSize().block());
