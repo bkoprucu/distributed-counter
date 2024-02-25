@@ -1,11 +1,13 @@
 server:
   port: 8080
-  shutdown: GRACEFUL
+  shutdown: graceful
   compression.enabled: false
 
 spring:
   application.name: distributed-counter
   cloud.kubernetes.enabled: false  # Enabled on kubernetes profile
+  lifecycle:
+    timeout-per-shutdown-phase: 5
   main:
     lazy-initialization: true
     web-application-type: REACTIVE

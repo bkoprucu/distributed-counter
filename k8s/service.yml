@@ -1,0 +1,17 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: distributed-counter
+  labels:
+    app: distributed-counter
+spec:
+  type: LoadBalancer
+  selector:
+    app: distributed-counter
+  ports:
+    - port: 8080
+      name: service-port
+      targetPort: 8080
+    - port: 5701
+      name: hazelcast-port

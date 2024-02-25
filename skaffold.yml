@@ -1,24 +1,44 @@
-apiVersion: skaffold/v4beta7
+apiVersion: skaffold/v4beta6
 kind: Config
+metadata:
+  name: distributed-counter
 build:
   tagPolicy:
-    sha256: {}
+    dateTime: {}
   artifacts:
-    - image: bkoprucu/distributedcounter
-      jib:
-        args:
-          - -Dmaven.test.skip=true
+    - image: localhost:6000/bkoprucu/distributedcounter
+      jib: {}
 
 manifests:
   rawYaml:
-    - k8s/rbac.yml
-    - k8s/configmap.yml
+    - k8s/hazelcast_rbac.yml
     - k8s/deployment.yml
+    - k8s/service.yml
+    - k8s/configmap.yml
 
 profiles:
-  - name: dockerfile
+  - name: notest
+    build:
+      artifacts:
+        - image: localhost:6000/bkoprucu/distributedcounter
+          jib:
+            args:
+              - -Dmaven.test.skip=true
+
+  - name: docker
+    build:
+      artifacts:
+        - image: localhost:6000/bkoprucu/distributedcounter
+          docker: # Does not support auto file sync
+            dockerfile: Dockerfile
+
+  - name: bpack
     build:
       artifacts:
         - image: bkoprucu/distributedcounter
-          docker:
-            dockerfile: Dockerfile
+          buildpacks:
+            builder: paketobuildpacks/builder-jammy-base
+            dependencies:
+              paths:
+                - src
+                - pom.xml

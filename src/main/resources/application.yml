@@ -6,6 +6,8 @@ management:
     env:
       keys-to-sanitize: "password,secret"
       show-values: ALWAYS
+    configprops:
+      show-values: ALWAYS
 
   health:
     readinessstate:
@@ -18,5 +20,5 @@ logging.level:
 
 hazelcastcounter:
   cluster-name: "counter-cluster"
-  kubernetes-service-name: "distributedcounter-hazelcast-service" # Should match the service in deployment.yml
-  implementation-class-name: "HazelcastPNCounter"
+  kubernetes-service-name: "distributed-counter" # Should match the service in deployment.yml
+  implementation-class-name: "HazelcastPNCounter" # or "HazelcastEntryProcessorCounter"

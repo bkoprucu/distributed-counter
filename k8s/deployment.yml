@@ -1,29 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: distributedcounter-deployment
+  name: distributed-counter
   labels:
-    app: distributedcounter-app
+    app: distributed-counter
 
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: distributedcounter-app
+      app: distributed-counter
+  strategy: {}
   template:
     metadata:
       labels:
-        app: distributedcounter-app
+        app: distributed-counter
     spec:
       containers:
         - name: distributedcounter
-          image: bkoprucu/distributedcounter
-          imagePullPolicy: Always
+          image: localhost:6000/bkoprucu/distributedcounter
+        # imagePullPolicy: Always  # 'Always' not compatible with Skaffold
           ports:
             - containerPort: 8080
               name: service-port
             - containerPort: 5701
               name: hazelcast-port
+          envFrom:
+            - configMapRef:
+                name: distributed-counter
           env:
             - name: spring_profiles_active
               value: kubernetes
@@ -37,7 +41,7 @@ spec:
             httpGet:
               port: service-port
               path: /actuator/health/liveness
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             timeoutSeconds: 3
             periodSeconds: 10
             failureThreshold: 3
@@ -45,48 +49,17 @@ spec:
             httpGet:
               port: service-port
               path: /actuator/health/readiness
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             timeoutSeconds: 3
             periodSeconds: 5
-            failureThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 5" ]
           resources:
             requests:
               memory: 512M
             limits:
               memory: 1024M
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: distributedcounter-service
-  labels:
-    app: distributedcounter-app
-spec:
-  type: LoadBalancer
-  selector:
-    app: distributedcounter-app
-  ports:
-    # Enable below port and disable ClusterIP service to access Hazelcast from the outside
-    #- port: 5701
-    #  name: hazelcast
-    - port: 8080
-      name: service
-      targetPort: 8080
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: distributedcounter-hazelcast-service # Should match with the value set in HazelcastConfigBuilder.withKubernetesDiscovery()
-  labels:
-    app: distributedcounter-app
-spec:
-  type: ClusterIP
-  clusterIP: None
-  selector:
-    app: distributedcounter-app
-  ports:
-    - port: 5701
-      name: hazelcast
+status: {}
