@@ -1,13 +1,27 @@
+server:
+  port: 8080
+  shutdown: graceful
+  compression.enabled: false
+
+spring:
+  application.name: distributed-counter
+  lifecycle:
+    timeout-per-shutdown-phase: 5
+  main:
+    lazy-initialization: true
+    web-application-type: REACTIVE
+    banner-mode: off
+
 management:
   endpoints:
-    web.exposure.include: "*"
+    web.exposure.include: "*"  # Unsafe - not for production
     enabled-by-default: true
   endpoint:
     env:
       keys-to-sanitize: "password,secret"
-      show-values: ALWAYS
+      show-values: ALWAYS   # Unsafe - not for production
     configprops:
-      show-values: ALWAYS
+      show-values: ALWAYS   # Unsafe - not for production
 
   health:
     readinessstate:

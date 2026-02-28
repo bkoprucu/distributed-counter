@@ -1,0 +1,11 @@
+spring:
+  config:
+    import: "kubernetes:"  # Will fail if ConfigMap is missing,  use "optional:kubernetes:" to prevent that
+  main:
+    cloud-platform: kubernetes  # For local Kubernetes simulation, it'll be enabled by auto-detection in real cluster deployments anyway
+  cloud:
+    kubernetes:
+      # enabled: true # Usually handled by auto-detection
+      config:
+        namespace: default
+        # enable-api: true # Enabled by default
