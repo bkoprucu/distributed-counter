@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CounterResourceTest {
 
-    @MockBean
+    @MockitoBean
     Counter counter;
 
     @Autowired
@@ -168,9 +168,9 @@ public class CounterResourceTest {
                                           .build(eventId))
              .exchange()
              .expectStatus().isBadRequest()
-             .expectHeader().contentType(MediaType.APPLICATION_JSON)
+             .expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
              .expectBody()
-             .jsonPath("$.message").isEqualTo("increment.amount: amount must be positive");
+             .jsonPath("$.detail").isEqualTo("increment.amount: amount must be positive");
     }
 
 }
