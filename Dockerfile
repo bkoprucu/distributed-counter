@@ -1,5 +1,5 @@
-FROM azul/zulu-openjdk-alpine:21-jre-headless as builder
-WORKDIR app
+FROM azul/zulu-openjdk-alpine:21-jre-headless AS builder
+WORKDIR /app
 ARG JAR_FILE=target/distributed-counter-0.1.2-SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
@@ -9,7 +9,7 @@ RUN java -Djarmode=layertools -jar app.jar extract
 FROM azul/zulu-openjdk-alpine:21-jre-headless
 
 USER nobody
-WORKDIR app
+WORKDIR /app
 
 # REST port
 EXPOSE 8080/tcp
